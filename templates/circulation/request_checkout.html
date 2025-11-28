@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Request Checkout - {{ publication.title }} - e-Library{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0"><i class="bi bi-cart-plus"></i> Request Checkout</h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i> This book is available! Submit a checkout request and pick it up when ready.
+                </div>
+                
+                <h5>{{ publication.title }}</h5>
+                {% if publication.subtitle %}
+                <p class="text-muted">{{ publication.subtitle }}</p>
+                {% endif %}
+                <p><strong>Authors:</strong> {{ publication.get_authors_display }}</p>
+                <p><strong>Available Copies:</strong> {{ available_items.count }}</p>
+                
+                <hr>
+                
+                <h6>How it works:</h6>
+                <ol>
+                    <li>Submit your checkout request below</li>
+                    <li>Staff will review and approve your request</li>
+                    <li>You'll receive a notification when it's ready for pickup</li>
+                    <li>Come to the library to pick up your book</li>
+                </ol>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes (Optional)</label>
+                        <textarea name="notes" id="notes" class="form-control" rows="3" placeholder="Any special instructions or preferred pickup time..."></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-send"></i> Submit Checkout Request
+                        </button>
+                        <a href="{% url 'catalog:publication_detail' publication.id %}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Borrowers - e-Library{% endblock %}
+
+{% block content %}
+<h1>Borrower Management</h1>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get">
+            {{ form|crispy }}
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i> Search
+            </button>
+            <a href="{% url 'circulation:borrower_list' %}" class="btn btn-secondary">Clear</a>
+        </form>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Username</th>
+                <th>Card Number</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Active Loans</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for borrower in borrowers %}
+            <tr>
+                <td>{{ borrower.get_full_name }}</td>
+                <td>{{ borrower.username }}</td>
+                <td>{{ borrower.library_card_number|default:"N/A" }}</td>
+                <td>{{ borrower.email }}</td>
+                <td>
+                    {% if borrower.is_blocked %}
+                        <span class="badge bg-danger">Blocked</span>
+                    {% else %}
+                        <span class="badge bg-success">Active</span>
+                    {% endif %}
+                </td>
+                <td>{{ borrower.get_active_loans_count }} / {{ borrower.max_items_allowed }}</td>
+                <td>
+                    <a href="{% url 'circulation:borrower_detail' borrower.id %}" class="btn btn-sm btn-info">
+                        View Details
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7">No borrowers found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'circulation:dashboard' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+{% endblock %}

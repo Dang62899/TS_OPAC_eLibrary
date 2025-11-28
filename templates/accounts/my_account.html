@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+
+{% block title %}My Account - e-Library{% endblock %}
+
+{% block content %}
+<h1>My Account</h1>
+<p class="lead">Welcome, {{ user.get_full_name }}!</p>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Account Information</h5>
+                <p><strong>Username:</strong> {{ user.username }}</p>
+                <p><strong>Email:</strong> {{ user.email }}</p>
+                <p><strong>Card Number:</strong> {{ user.library_card_number|default:"N/A" }}</p>
+                <p><strong>Active Loans:</strong> {{ user.get_active_loans_count }} / {{ user.max_items_allowed }}</p>
+                <a href="{% url 'accounts:edit_profile' %}" class="btn btn-primary btn-sm">Edit Profile</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <h3>Current Loans</h3>
+        {% if active_loans %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Due Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in active_loans %}
+                    <tr {% if loan.is_overdue %}class="table-danger"{% endif %}>
+                        <td>
+                            <a href="{% url 'catalog:publication_detail' loan.item.publication.id %}">
+                                {{ loan.item.publication.title }}
+                            </a>
+                        </td>
+                        <td>
+                            {{ loan.due_date }}
+                            {% if loan.is_overdue %}
+                                <span class="badge bg-danger">Overdue {{ loan.days_overdue }} day(s)</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if loan.can_renew %}
+                                <a href="{% url 'circulation:renew_loan_online' loan.id %}" class="btn btn-sm btn-success">Renew</a>
+                            {% else %}
+                                <span class="text-muted small">Cannot renew</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No active loans</p>
+        {% endif %}
+
+        <h3 class="mt-4">Active Holds</h3>
+        {% if active_holds %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>Details</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hold in active_holds %}
+                    <tr {% if hold.status == 'ready' %}class="table-success"{% endif %}>
+                        <td>
+                            <a href="{% url 'catalog:publication_detail' hold.publication.id %}">
+                                {{ hold.publication.title }}
+                            </a>
+                        </td>
+                        <td>
+                            {% if hold.status == 'ready' %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> Ready for Pickup
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning">
+                                    <i class="bi bi-clock"></i> Waiting
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if hold.status == 'ready' %}
+                                <strong>Pickup Location:</strong> {{ hold.pickup_location }}<br>
+                                <strong>Pickup By:</strong> {{ hold.expiry_date|date:"M d, Y" }}<br>
+                                <small class="text-muted">Item is waiting for you at the hold shelf</small>
+                            {% else %}
+                                Queue Position: #{{ hold.queue_position }}<br>
+                                <small class="text-muted">Placed: {{ hold.hold_date|date:"M d, Y" }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if hold.status == 'ready' %}
+                                <div class="alert alert-info mb-2 p-2">
+                                    <small><i class="bi bi-info-circle"></i> Come to {{ hold.pickup_location }} to pick up your book!</small>
+                                </div>
+                            {% endif %}
+                            <a href="{% url 'circulation:cancel_hold' hold.id %}" class="btn btn-sm btn-danger">Cancel</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No active holds</p>
+        {% endif %}
+
+        <h3 class="mt-4">Checkout Requests</h3>
+        {% if checkout_requests %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>Details</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in checkout_requests %}
+                    <tr {% if request.status == 'approved' %}class="table-success"{% endif %}>
+                        <td>
+                            <a href="{% url 'catalog:publication_detail' request.publication.id %}">
+                                {{ request.publication.title }}
+                            </a>
+                        </td>
+                        <td>
+                            {% if request.status == 'pending' %}
+                                <span class="badge bg-warning">
+                                    <i class="bi bi-clock"></i> Pending Review
+                                </span>
+                            {% elif request.status == 'approved' %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> Approved - Ready for Pickup
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if request.status == 'pending' %}
+                                Requested: {{ request.request_date|date:"M d, Y" }}<br>
+                                <small class="text-muted">Waiting for staff review</small>
+                            {% elif request.status == 'approved' %}
+                                <strong>Pickup Location:</strong> {{ request.pickup_location }}<br>
+                                <strong>Pickup By:</strong> {{ request.pickup_by_date|date:"M d, Y" }}<br>
+                                <small class="text-muted">Approved: {{ request.review_date|date:"M d, Y" }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if request.status == 'approved' %}
+                                <div class="alert alert-info mb-2 p-2">
+                                    <small><i class="bi bi-info-circle"></i> Come to {{ request.pickup_location }} to pick up your book!</small>
+                                </div>
+                            {% endif %}
+                            <a href="{% url 'circulation:cancel_checkout_request' request.id %}" class="btn btn-sm btn-danger">Cancel</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No active checkout requests</p>
+        {% endif %}
+
+        <h3 class="mt-4">Loan History</h3>
+        {% if loan_history %}
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Checkout Date</th>
+                        <th>Return Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in loan_history %}
+                    <tr>
+                        <td>{{ loan.item.publication.title|truncatewords:5 }}</td>
+                        <td>{{ loan.checkout_date|date:"m/d/Y" }}</td>
+                        <td>{{ loan.return_date|date:"m/d/Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No loan history</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

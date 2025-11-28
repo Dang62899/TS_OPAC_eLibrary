@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile - e-Library{% endblock %}
+
+{% block content %}
+<h1>My Profile</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tbody>
+                        <tr>
+                            <th style="width: 200px;">Username</th>
+                            <td>{{ user.username }}</td>
+                        </tr>
+                        <tr>
+                            <th>Full Name</th>
+                            <td>{{ user.get_full_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Email</th>
+                            <td>{{ user.email }}</td>
+                        </tr>
+                        <tr>
+                            <th>Phone</th>
+                            <td>{{ user.phone|default:"Not provided" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Address</th>
+                            <td>{{ user.address|default:"Not provided" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Date of Birth</th>
+                            <td>{{ user.date_of_birth|default:"Not provided" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Library Card Number</th>
+                            <td>{{ user.library_card_number|default:"Not assigned" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Max Items Allowed</th>
+                            <td>{{ user.max_items_allowed }}</td>
+                        </tr>
+                        {% if user.is_blocked %}
+                        <tr>
+                            <th>Status</th>
+                            <td>
+                                <span class="badge bg-danger">Blocked</span>
+                                <br><small>{{ user.block_reason }}</small>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+                <a href="{% url 'accounts:edit_profile' %}" class="btn btn-primary">Edit Profile</a>
+                <a href="{% url 'accounts:my_account' %}" class="btn btn-secondary">View My Account</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

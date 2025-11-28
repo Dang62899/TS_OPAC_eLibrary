@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Search Catalog - e-Library{% endblock %}
+
+{% block content %}
+<h1>Search Catalog</h1>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get">
+            {{ form|crispy }}
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i> Search
+            </button>
+            <a href="{% url 'catalog:search' %}" class="btn btn-secondary">Clear</a>
+        </form>
+    </div>
+</div>
+
+{% if total_results is not None %}
+<h3>Search Results ({{ total_results }} found)</h3>
+
+<div class="row">
+    {% for publication in page_obj %}
+    <div class="col-md-12 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5 class="card-title">
+                            <a href="{% url 'catalog:publication_detail' publication.id %}">{{ publication.title }}</a>
+                        </h5>
+                        {% if publication.subtitle %}
+                        <p class="text-muted">{{ publication.subtitle }}</p>
+                        {% endif %}
+                        <p class="mb-1"><strong>Author(s):</strong> {{ publication.get_authors_display }}</p>
+                        <p class="mb-1"><strong>Type:</strong> {{ publication.publication_type }}</p>
+                        {% if publication.call_number %}
+                        <p class="mb-1"><strong>Call Number:</strong> {{ publication.call_number }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <p>
+                            <strong>Copies:</strong> {{ publication.get_available_copies_count }} / {{ publication.get_total_copies_count }} available
+                        </p>
+                        {% if publication.is_available %}
+                            <span class="badge bg-success">Available</span>
+                        {% else %}
+                            <span class="badge bg-warning">On Loan</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <p class="text-muted">No publications found matching your search criteria.</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% if page_obj.has_other_pages %}
+<nav>
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1&{{ request.GET.urlencode }}">First</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">Previous</a>
+        </li>
+        {% endif %}
+
+        <li class="page-item active">
+            <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        </li>
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">Next</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&{{ request.GET.urlencode }}">Last</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endif %}
+
+{% endblock %}

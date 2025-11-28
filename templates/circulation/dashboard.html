@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Circulation Dashboard - e-Library{% endblock %}
+
+{% block content %}
+<h1>Circulation Dashboard</h1>
+
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3>{{ active_loans }}</h3>
+                <p class="text-muted mb-0">Active Loans</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-danger">{{ overdue_loans }}</h3>
+                <p class="text-muted mb-0">Overdue</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3>{{ holds_waiting }}</h3>
+                <p class="text-muted mb-0">Holds Waiting</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-success">{{ holds_ready }}</h3>
+                <p class="text-muted mb-0">Holds Ready</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3>{{ items_in_transit }}</h3>
+                <p class="text-muted mb-0">In Transit</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="btn-group" role="group">
+            <a href="{% url 'circulation:checkout' %}" class="btn btn-primary">Check Out</a>
+            <a href="{% url 'circulation:checkin' %}" class="btn btn-success">Check In</a>
+            <a href="{% url 'circulation:borrower_list' %}" class="btn btn-info">Borrowers</a>
+            <a href="{% url 'circulation:manage_holds' %}" class="btn btn-warning">Manage Holds</a>
+            <a href="{% url 'circulation:reports' %}" class="btn btn-secondary">Reports</a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <h3>Recent Checkouts</h3>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Borrower</th>
+                        <th>Due Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in recent_checkouts %}
+                    <tr>
+                        <td>{{ loan.item.publication.title|truncatewords:5 }}</td>
+                        <td>{{ loan.borrower.get_full_name }}</td>
+                        <td>{{ loan.due_date }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3">No recent checkouts</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <h3>Recent Returns</h3>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Borrower</th>
+                        <th>Returned</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in recent_returns %}
+                    <tr>
+                        <td>{{ loan.item.publication.title|truncatewords:5 }}</td>
+                        <td>{{ loan.borrower.get_full_name }}</td>
+                        <td>{{ loan.return_date|date:"m/d/Y H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3">No recent returns</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

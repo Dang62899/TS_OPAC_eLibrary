@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications - e-Library{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h3 class="mb-0"><i class="bi bi-bell-fill"></i> Notifications</h3>
+                <div>
+                    <a href="?unread=true" class="btn btn-sm btn-light me-2">
+                        <i class="bi bi-funnel"></i> Unread Only ({{ unread_count }})
+                    </a>
+                    {% if show_unread %}
+                    <a href="{% url 'circulation:notifications_list' %}" class="btn btn-sm btn-light me-2">
+                        <i class="bi bi-list"></i> Show All
+                    </a>
+                    {% endif %}
+                    {% if unread_count > 0 %}
+                    <form method="post" action="{% url 'circulation:mark_all_notifications_read' %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-success">
+                            <i class="bi bi-check-all"></i> Mark All Read
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% if notifications %}
+                <div class="list-group list-group-flush">
+                    {% for notification in notifications %}
+                    <div class="list-group-item {% if not notification.is_read %}list-group-item-light border-start border-primary border-4{% endif %}">
+                        <div class="d-flex w-100 justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-{{ notification.get_icon }} fs-4 text-{{ notification.get_css_class }} me-3"></i>
+                                    <div>
+                                        <h5 class="mb-1">
+                                            {{ notification.title }}
+                                            {% if not notification.is_read %}
+                                            <span class="badge bg-primary ms-2">New</span>
+                                            {% endif %}
+                                        </h5>
+                                        <small class="text-muted">
+                                            <i class="bi bi-clock"></i> {{ notification.created_date|date:"F d, Y g:i A" }}
+                                            ({{ notification.created_date|timesince }} ago)
+                                        </small>
+                                    </div>
+                                </div>
+                                <p class="mb-2">{{ notification.message }}</p>
+                                
+                                {% if notification.loan %}
+                                <div class="alert alert-info mb-2">
+                                    <strong>📖 Book:</strong> {{ notification.loan.item.publication.title }}<br>
+                                    <strong>📅 Due Date:</strong> {{ notification.loan.due_date|date:"F d, Y" }}
+                                    {% if notification.loan.is_overdue %}
+                                    <br><strong class="text-danger">⚠️ Days Overdue:</strong> {{ notification.loan.days_overdue }}
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                
+                                {% if notification.hold %}
+                                <div class="alert alert-info mb-2">
+                                    <strong>📖 Book:</strong> {{ notification.hold.publication.title }}<br>
+                                    {% if notification.hold.status == 'ready' %}
+                                    <strong>📍 Pickup Location:</strong> {{ notification.hold.pickup_location }}<br>
+                                    <strong>⏰ Hold Until:</strong> {{ notification.hold.expiry_date|date:"F d, Y" }}
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                
+                                <div class="mt-2">
+                                    {% if notification.action_url %}
+                                    <a href="{{ notification.action_url }}" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-arrow-right-circle"></i> View Details
+                                    </a>
+                                    {% endif %}
+                                    
+                                    {% if not notification.is_read %}
+                                    <a href="{% url 'circulation:mark_notification_read' notification.id %}?next=/circulation/notifications/" 
+                                       class="btn btn-sm btn-success">
+                                        <i class="bi bi-check"></i> Mark as Read
+                                    </a>
+                                    {% endif %}
+                                    
+                                    <form method="post" action="{% url 'circulation:delete_notification' notification.id %}" 
+                                          style="display:inline;" 
+                                          onsubmit="return confirm('Delete this notification?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            
+                            <div class="ms-3">
+                                {% if notification.email_sent %}
+                                <span class="badge bg-success" title="Email sent on {{ notification.email_sent_date|date:'Y-m-d H:i' }}">
+                                    <i class="bi bi-envelope-check"></i> Email Sent
+                                </span>
+                                {% elif notification.email_error %}
+                                <span class="badge bg-warning" title="{{ notification.email_error }}">
+                                    <i class="bi bi-exclamation-triangle"></i> Email Failed
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-envelope"></i> Pending
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-bell-slash text-muted" style="font-size: 4rem;"></i>
+                    <p class="text-muted mt-3">
+                        {% if show_unread %}
+                        No unread notifications.
+                        {% else %}
+                        No notifications yet.
+                        {% endif %}
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ publication.title }} - e-Library{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'catalog:index' %}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'catalog:search' %}">Catalog</a></li>
+        <li class="breadcrumb-item active">{{ publication.title|truncatewords:5 }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-md-3">
+        {% if publication.cover_image %}
+        <img src="{{ publication.cover_image.url }}" class="img-fluid" alt="{{ publication.title }}">
+        {% else %}
+        <div class="bg-secondary text-white text-center p-5">
+            <i class="bi bi-book" style="font-size: 4rem;"></i>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-9">
+        <h1>{{ publication.title }}</h1>
+        {% if publication.subtitle %}
+        <h4 class="text-muted">{{ publication.subtitle }}</h4>
+        {% endif %}
+
+        <table class="table table-sm">
+            <tbody>
+                <tr>
+                    <th style="width: 150px;">Author(s)</th>
+                    <td>{{ publication.get_authors_display }}</td>
+                </tr>
+                <tr>
+                    <th>Type</th>
+                    <td><span class="badge bg-info">{{ publication.publication_type }}</span></td>
+                </tr>
+                {% if publication.publisher %}
+                <tr>
+                    <th>Publisher</th>
+                    <td>{{ publication.publisher }}</td>
+                </tr>
+                {% endif %}
+                {% if publication.publication_date %}
+                <tr>
+                    <th>Publication Date</th>
+                    <td>{{ publication.publication_date|date:"Y" }}</td>
+                </tr>
+                {% endif %}
+                {% if publication.edition %}
+                <tr>
+                    <th>Edition</th>
+                    <td>{{ publication.edition }}</td>
+                </tr>
+                {% endif %}
+                {% if publication.isbn %}
+                <tr>
+                    <th>ISBN</th>
+                    <td>{{ publication.isbn }}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <th>Language</th>
+                    <td>{{ publication.language }}</td>
+                </tr>
+                {% if publication.call_number %}
+                <tr>
+                    <th>Call Number</th>
+                    <td><strong>{{ publication.call_number }}</strong></td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        {% if publication.abstract %}
+        <h5>Abstract</h5>
+        <p>{{ publication.abstract }}</p>
+        {% endif %}
+
+        {% if publication.summary %}
+        <h5>Summary</h5>
+        <p>{{ publication.summary }}</p>
+        {% endif %}
+
+        {% if publication.subjects.all %}
+        <h5>Subjects</h5>
+        <p>
+            {% for subject in publication.subjects.all %}
+            <span class="badge bg-secondary">{{ subject.name }}</span>
+            {% endfor %}
+        </p>
+        {% endif %}
+    </div>
+</div>
+
+<hr class="my-4">
+
+<h3>Available Copies</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Barcode</th>
+            <th>Location</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td>{{ item.barcode }}</td>
+            <td>{{ item.location }}</td>
+            <td>
+                {% if item.status == 'available' %}
+                    <span class="badge bg-success">{{ item.get_status_display }}</span>
+                {% elif item.status == 'on_loan' %}
+                    <span class="badge bg-warning">{{ item.get_status_display_with_date }}</span>
+                {% else %}
+                    <span class="badge bg-secondary">{{ item.get_status_display }}</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3">No copies available</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if user.is_authenticated %}
+<div class="mt-4">
+    <h4>Availability & Actions</h4>
+    
+    {% if publication.is_available %}
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle-fill"></i> <strong>Available Now</strong> - {{ publication.available_copies_count }} cop{{ publication.available_copies_count|pluralize:"y,ies" }} available
+        </div>
+        
+        <!-- Check for existing checkout request -->
+        {% if checkout_request %}
+            <div class="alert alert-info">
+                <i class="bi bi-clock-history"></i> <strong>{{ checkout_request.get_status_display }}</strong>
+                <p class="mb-0">Request submitted: {{ checkout_request.request_date|date:"M d, Y g:i A" }}</p>
+                {% if checkout_request.status == 'approved' %}
+                    <p class="mb-0"><strong>Pickup Location:</strong> {{ checkout_request.pickup_location }}</p>
+                    <p class="mb-0"><strong>Pick up by:</strong> {{ checkout_request.pickup_by_date|date:"M d, Y" }}</p>
+                {% endif %}
+                <a href="{% url 'circulation:cancel_checkout_request' checkout_request.id %}" class="btn btn-sm btn-danger mt-2">Cancel Request</a>
+            </div>
+        {% else %}
+            <a href="{% url 'circulation:request_checkout' publication.id %}" class="btn btn-primary btn-lg">
+                <i class="bi bi-cart-plus"></i> Request Checkout
+            </a>
+            <p class="text-muted mt-2"><small>Submit a request and pick up the book when it's ready</small></p>
+        {% endif %}
+        
+    {% else %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle-fill"></i> <strong>All Copies On Loan</strong> - No copies currently available
+        </div>
+        
+        {% if hold %}
+            <div class="alert alert-info">
+                <i class="bi bi-bookmark-check-fill"></i> <strong>You have an active hold</strong>
+                <p class="mb-0">Queue position: #{{ hold.queue_position }}</p>
+                <p class="mb-0">Hold placed: {{ hold.hold_date|date:"M d, Y" }}</p>
+                <a href="{% url 'circulation:cancel_hold' hold.id %}" class="btn btn-sm btn-danger mt-2">Cancel Hold</a>
+            </div>
+        {% else %}
+            <a href="{% url 'circulation:place_hold' publication.id %}" class="btn btn-warning btn-lg">
+                <i class="bi bi-bookmark-plus"></i> Place Hold (Reserve)
+            </a>
+            <p class="text-muted mt-2"><small>Reserve this book and we'll notify you when it's available</small></p>
+        {% endif %}
+    {% endif %}
+</div>
+{% else %}
+<div class="alert alert-info mt-4">
+    <i class="bi bi-info-circle"></i> <a href="{% url 'accounts:login' %}">Login</a> to request checkout or place holds.
+</div>
+{% endif %}
+
+{% endblock %}

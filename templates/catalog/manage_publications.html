@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Publications - e-Library{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="bi bi-book"></i> Manage Publications</h2>
+    </div>
+    <div class="col text-end">
+        <a href="{% url 'catalog:add_publication' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add New Publication
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <input type="text" name="search" class="form-control" placeholder="Search by title, ISBN, call number..." value="{{ search_query }}">
+            </div>
+            <div class="col-md-4">
+                <select name="type" class="form-select">
+                    <option value="">All Types</option>
+                    {% for pub_type in publication_types %}
+                    <option value="{{ pub_type.id }}" {% if type_filter == pub_type.id|stringformat:"s" %}selected{% endif %}>
+                        {{ pub_type.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Search</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>ISBN</th>
+                        <th>Publication Date</th>
+                        <th>Total Copies</th>
+                        <th>Available</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for publication in page_obj %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'catalog:publication_detail' publication.id %}">
+                                {{ publication.title }}
+                            </a>
+                        </td>
+                        <td>{{ publication.publication_type.name }}</td>
+                        <td>{{ publication.isbn|default:"-" }}</td>
+                        <td>{{ publication.publication_date|date:"Y" }}</td>
+                        <td>{{ publication.get_total_copies_count }}</td>
+                        <td>
+                            <span class="badge bg-success">{{ publication.get_available_count }}</span>
+                        </td>
+                        <td>
+                            <a href="{% url 'catalog:edit_publication' publication.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                            <a href="{% url 'catalog:add_items' publication.id %}" class="btn btn-sm btn-outline-info">
+                                <i class="bi bi-plus-square"></i> Items
+                            </a>
+                            {% if user.user_type == 'admin' %}
+                            <a href="{% url 'catalog:delete_publication' publication.id %}" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i> Delete
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">No publications found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&search={{ search_query }}&type={{ type_filter }}">Previous</a>
+                </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                </li>
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&search={{ search_query }}&type={{ type_filter }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

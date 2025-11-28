@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}Borrower Details - {{ borrower.get_full_name }} - e-Library{% endblock %}
+
+{% block content %}
+<h1>Borrower Details</h1>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Borrower Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Name:</strong> {{ borrower.get_full_name }}</p>
+                <p><strong>Username:</strong> {{ borrower.username }}</p>
+                <p><strong>Email:</strong> {{ borrower.email }}</p>
+                <p><strong>Card Number:</strong> {{ borrower.library_card_number|default:"N/A" }}</p>
+                <p><strong>Phone:</strong> {{ borrower.phone|default:"N/A" }}</p>
+                <p><strong>Max Items:</strong> {{ borrower.max_items_allowed }}</p>
+                <p><strong>Status:</strong> 
+                    {% if borrower.is_blocked %}
+                        <span class="badge bg-danger">Blocked</span>
+                        <br><small>{{ borrower.block_reason }}</small>
+                    {% else %}
+                        <span class="badge bg-success">Active</span>
+                    {% endif %}
+                </p>
+                
+                {% if borrower.is_blocked %}
+                    <a href="{% url 'circulation:unblock_borrower' borrower.id %}" class="btn btn-success btn-sm">Unblock</a>
+                {% else %}
+                    <a href="{% url 'circulation:block_borrower' borrower.id %}" class="btn btn-danger btn-sm">Block</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <h3>Active Loans ({{ active_loans.count }})</h3>
+        {% if active_loans %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Checkout Date</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in active_loans %}
+                    <tr {% if loan.is_overdue %}class="table-danger"{% endif %}>
+                        <td>{{ loan.item.publication.title|truncatewords:6 }}</td>
+                        <td>{{ loan.checkout_date|date:"m/d/Y" }}</td>
+                        <td>{{ loan.due_date }}</td>
+                        <td>
+                            {% if loan.is_overdue %}
+                                <span class="badge bg-danger">Overdue {{ loan.days_overdue }} day(s)</span>
+                            {% else %}
+                                <span class="badge bg-success">Active</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if loan.can_renew %}
+                                <a href="{% url 'circulation:renew_loan' loan.id %}" class="btn btn-sm btn-success">Renew</a>
+                            {% else %}
+                                <span class="text-muted small">Cannot renew</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No active loans</p>
+        {% endif %}
+
+        <h3 class="mt-4">Active Holds ({{ active_holds.count }})</h3>
+        {% if active_holds %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Hold Date</th>
+                        <th>Status</th>
+                        <th>Queue Position</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hold in active_holds %}
+                    <tr>
+                        <td>{{ hold.publication.title|truncatewords:6 }}</td>
+                        <td>{{ hold.hold_date|date:"m/d/Y" }}</td>
+                        <td>
+                            {% if hold.status == 'ready' %}
+                                <span class="badge bg-success">Ready</span>
+                            {% else %}
+                                <span class="badge bg-warning">Waiting</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ hold.queue_position }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No active holds</p>
+        {% endif %}
+
+        <h3 class="mt-4">Loan History</h3>
+        {% if loan_history %}
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Checkout</th>
+                        <th>Return</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in loan_history %}
+                    <tr>
+                        <td>{{ loan.item.publication.title|truncatewords:5 }}</td>
+                        <td>{{ loan.checkout_date|date:"m/d/Y" }}</td>
+                        <td>{{ loan.return_date|date:"m/d/Y"|default:"Not returned" }}</td>
+                        <td>{{ loan.get_status_display }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No loan history</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'circulation:borrower_list' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Borrower List
+    </a>
+</div>
+{% endblock %}

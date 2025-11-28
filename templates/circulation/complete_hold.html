@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}Complete Hold Pickup - e-Library{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'circulation:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'circulation:manage_holds' %}">Manage Holds</a></li>
+            <li class="breadcrumb-item active">Complete Hold Pickup</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="bi bi-check-circle"></i> Complete Hold Pickup</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5><i class="bi bi-info-circle"></i> Borrower Information</h5>
+                        <p class="mb-1"><strong>Name:</strong> {{ hold.borrower.get_full_name }}</p>
+                        <p class="mb-1"><strong>Library Card:</strong> {{ hold.borrower.library_card_number|default:"N/A" }}</p>
+                        <p class="mb-1"><strong>Email:</strong> {{ hold.borrower.email }}</p>
+                        <p class="mb-1"><strong>Current Loans:</strong> {{ hold.borrower.get_active_loans_count }} / {{ hold.borrower.max_items_allowed }}</p>
+                    </div>
+
+                    <div class="alert alert-light border">
+                        <h5><i class="bi bi-book"></i> Publication Details</h5>
+                        <p class="mb-1"><strong>Title:</strong> {{ hold.publication.title }}</p>
+                        <p class="mb-1"><strong>Author:</strong> {{ hold.publication.get_authors_display }}</p>
+                        {% if hold.publication.isbn %}
+                        <p class="mb-1"><strong>ISBN:</strong> {{ hold.publication.isbn }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h5><i class="bi bi-clock"></i> Hold Details</h5>
+                        <p class="mb-1"><strong>Hold Placed:</strong> {{ hold.hold_date|date:"M d, Y" }}</p>
+                        <p class="mb-1"><strong>Ready Since:</strong> {{ hold.ready_date|date:"M d, Y" }}</p>
+                        <p class="mb-1"><strong>Pickup Location:</strong> {{ hold.pickup_location }}</p>
+                        {% if hold.expiry_date %}
+                        <p class="mb-0"><strong>Expires:</strong> {{ hold.expiry_date|date:"M d, Y" }}</p>
+                        {% endif %}
+                    </div>
+
+                    <hr>
+
+                    <h5 class="mb-3"><i class="bi bi-book"></i> Select Item to Check Out</h5>
+                    
+                    <form method="post" id="completeHoldForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="item_identifier" class="form-label">Select Item (Item ID)</label>
+                            {% if available_items %}
+                            <select 
+                                class="form-select form-select-lg" 
+                                id="item_identifier" 
+                                name="item_identifier" 
+                                required
+                                autofocus
+                            >
+                                <option value="">-- Choose an item --</option>
+                                {% for item in available_items %}
+                                <option value="{{ item.id }}">
+                                    Item ID: {{ item.id }} {% if BARCODE_ENABLED %}(Barcode: {{ item.barcode }}){% endif %} - {{ item.location }} ({{ item.get_status_display }}) - ISBN: {{ item.publication.isbn|default:'N/A' }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                Select the item you're giving to the borrower.
+                            </div>
+                            {% else %}
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i> No available items found for this publication.
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg" {% if not available_items %}disabled{% endif %}>
+                                <i class="bi bi-check-circle"></i> Complete Pickup & Check Out
+                            </button>
+                            <a href="{% url 'circulation:manage_holds' %}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-list-ul"></i> Available Items</h5>
+                </div>
+                <div class="card-body">
+                    {% if available_items %}
+                        <p class="text-muted small">Items available for this hold:</p>
+                        <div class="list-group">
+                            {% for item in available_items %}
+                            <div class="list-group-item">
+                                <strong>Item ID: {{ item.id }}</strong>
+                                <br>
+                                <small class="text-muted">
+                                    {% if BARCODE_ENABLED %}
+                                        <i class="bi bi-qr-code"></i> Barcode: {{ item.barcode }} &nbsp;|&nbsp;
+                                    {% endif %}
+                                    <i class="bi bi-book"></i> ISBN: {{ item.publication.isbn|default:'N/A' }}
+                                </small>
+                                <br>
+                                <small class="text-muted">
+                                    <i class="bi bi-geo-alt"></i> {{ item.location }}
+                                </small>
+                                <br>
+                                <small>
+                                    <span class="badge bg-{% if item.status == 'on_hold_shelf' %}success{% else %}primary{% endif %}">
+                                        {{ item.get_status_display }}
+                                    </span>
+                                </small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning mb-0">
+                            <i class="bi bi-exclamation-triangle"></i> No items available for this publication.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Instructions</h6>
+                </div>
+                <div class="card-body">
+                    <ol class="small mb-0">
+                        <li>Verify borrower's identity</li>
+                        <li>Retrieve the item from hold shelf</li>
+                        <li>Select the item from dropdown</li>
+                        <li>Hand the item to the borrower</li>
+                        <li>Click "Complete Pickup & Check Out"</li>
+                        <li>Borrower will receive notification with due date</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Place Hold - e-Library{% endblock %}
+
+{% block content %}
+<h1>Place Hold</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">{{ publication.title }}</h5>
+                <p class="card-text">
+                    <strong>Author(s):</strong> {{ publication.get_authors_display }}<br>
+                    <strong>Type:</strong> {{ publication.publication_type }}<br>
+                    <strong>Available Copies:</strong> {{ publication.get_available_copies_count }} / {{ publication.get_total_copies_count }}
+                </p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Hold Information</h5>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <button type="submit" class="btn btn-primary">Place Hold</button>
+                    <a href="{% url 'catalog:publication_detail' publication.id %}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                Hold Information
+            </div>
+            <div class="card-body">
+                <p class="small">
+                    When this item becomes available, you will be notified by email.
+                    The item will be held for you for 7 days at your selected pickup location.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

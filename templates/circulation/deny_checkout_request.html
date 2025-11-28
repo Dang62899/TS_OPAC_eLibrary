@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Deny Checkout Request - e-Library{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h3 class="mb-0"><i class="bi bi-x-circle"></i> Deny Checkout Request</h3>
+            </div>
+            <div class="card-body">
+                <p><strong>Borrower:</strong> {{ checkout_request.borrower.get_full_name|default:checkout_request.borrower.username }}</p>
+                <p><strong>Publication:</strong> {{ checkout_request.publication.title }}</p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Reason for Denial *</label>
+                        <textarea name="reason" id="reason" class="form-control" rows="3" required placeholder="This will be shared with the borrower..."></textarea>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> The borrower will be notified with the reason you provide.
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-x-circle"></i> Deny Request
+                        </button>
+                        <a href="{% url 'circulation:manage_checkout_requests' %}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Check Out - e-Library{% endblock %}
+
+{% block content %}
+<h1>Check Out Item</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <button type="submit" class="btn btn-primary">Check Out</button>
+                    <a href="{% url 'circulation:dashboard' %}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                Instructions
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li>Enter the Item ID (from the book label)</li>
+                    <li>Enter borrower's library card number or username</li>
+                    <li>Add any notes (optional)</li>
+                    <li>Click Check Out</li>
+                </ol>
+                <!-- BARCODE SCANNER INSTRUCTIONS (for future use)
+                <ol>
+                    <li>Scan or enter the item barcode</li>
+                    <li>Enter borrower's library card number or username</li>
+                    <li>Add any notes (optional)</li>
+                    <li>Click Check Out</li>
+                </ol>
+                -->
+                <p class="mb-0 small text-muted">
+                    The due date will be automatically calculated based on library policy.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

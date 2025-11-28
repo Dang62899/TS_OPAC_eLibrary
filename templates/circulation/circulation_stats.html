@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Circulation Statistics - e-Library{% endblock %}
+
+{% block content %}
+<h1>Circulation Statistics</h1>
+<p class="text-muted">Last 30 Days ({{ last_30_days }} to {{ "now"|date:"Y-m-d" }})</p>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center">
+                <h3>{{ total_checkouts }}</h3>
+                <p class="text-muted mb-0">Total Checkouts</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center">
+                <h3>{{ total_returns }}</h3>
+                <p class="text-muted mb-0">Total Returns</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <h3>Most Borrowed Items</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Checkouts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in popular_items %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'catalog:publication_detail' item.publication.id %}">
+                                {{ item.publication.title|truncatewords:6 }}
+                            </a>
+                        </td>
+                        <td>{{ item.loan_count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2">No data available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <h3>Most Active Borrowers</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Borrower</th>
+                        <th>Checkouts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for borrower in active_borrowers %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'circulation:borrower_detail' borrower.id %}">
+                                {{ borrower.get_full_name }}
+                            </a>
+                        </td>
+                        <td>{{ borrower.loan_count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2">No data available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h3>Circulation by Publication Type</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Publication Type</th>
+                        <th>Checkouts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in by_type %}
+                    <tr>
+                        <td>{{ item.item__publication__publication_type__name }}</td>
+                        <td>{{ item.count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2">No data available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'circulation:reports' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Reports
+    </a>
+    <button onclick="window.print()" class="btn btn-primary">
+        <i class="bi bi-printer"></i> Print Report
+    </button>
+</div>
+{% endblock %}

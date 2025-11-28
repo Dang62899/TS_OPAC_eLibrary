@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Approve Checkout Request - e-Library{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h3 class="mb-0"><i class="bi bi-check-circle"></i> Approve Checkout Request</h3>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6>Borrower</h6>
+                        <p><strong>{{ checkout_request.borrower.get_full_name|default:checkout_request.borrower.username }}</strong><br>
+                        {{ checkout_request.borrower.email }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Publication</h6>
+                        <p><strong>{{ checkout_request.publication.title }}</strong><br>
+                        {{ checkout_request.publication.get_authors_display }}</p>
+                    </div>
+                </div>
+                
+                {% if checkout_request.notes %}
+                <div class="alert alert-info">
+                    <strong>Borrower Notes:</strong>
+                    <p class="mb-0">{{ checkout_request.notes }}</p>
+                </div>
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="pickup_location" class="form-label">Pickup Location *</label>
+                        <select name="pickup_location" id="pickup_location" class="form-select" required>
+                            <option value="">Select location...</option>
+                            {% for location in locations %}
+                            <option value="{{ location.id }}">{{ location.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="pickup_days" class="form-label">Pickup Window (Days)</label>
+                        <select name="pickup_days" id="pickup_days" class="form-select">
+                            <option value="3" selected>3 days</option>
+                            <option value="5">5 days</option>
+                            <option value="7">7 days</option>
+                        </select>
+                        <small class="text-muted">Borrower must pick up within this timeframe</small>
+                    </div>
+                    
+                    <div class="alert alert-success">
+                        <i class="bi bi-info-circle"></i> The borrower will receive a notification when you approve this request.
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="bi bi-check-circle"></i> Approve Request
+                        </button>
+                        <a href="{% url 'circulation:manage_checkout_requests' %}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

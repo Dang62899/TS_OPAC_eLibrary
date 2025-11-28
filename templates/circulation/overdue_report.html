@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Overdue Report - e-Library{% endblock %}
+
+{% block content %}
+<h1>Overdue Items Report</h1>
+<p class="text-muted">As of {{ today }}</p>
+
+{% if overdue_loans %}
+<div class="alert alert-warning">
+    <strong>{{ overdue_loans.count }}</strong> item(s) currently overdue
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Item</th>
+                {% if BARCODE_ENABLED %}<th>Barcode</th>{% endif %}
+                <th>Borrower</th>
+                <th>Due Date</th>
+                <th>Days Overdue</th>
+                <th>Contact</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for loan in overdue_loans %}
+            <tr>
+                <td>
+                    <a href="{% url 'catalog:publication_detail' loan.item.publication.id %}">
+                        {{ loan.item.publication.title|truncatewords:8 }}
+                    </a>
+                </td>
+                {% if BARCODE_ENABLED %}<td>{{ loan.item.barcode }}</td>{% endif %}
+                <td>
+                    <a href="{% url 'circulation:borrower_detail' loan.borrower.id %}">
+                        {{ loan.borrower.get_full_name }}
+                    </a>
+                </td>
+                <td>{{ loan.due_date }}</td>
+                <td>
+                    <span class="badge bg-danger">{{ loan.days_overdue }} day(s)</span>
+                </td>
+                <td>{{ loan.borrower.email }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-success">
+    <i class="bi bi-check-circle"></i> No overdue items!
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{% url 'circulation:reports' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Reports
+    </a>
+    <button onclick="window.print()" class="btn btn-primary">
+        <i class="bi bi-printer"></i> Print Report
+    </button>
+</div>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Holds - e-Library{% endblock %}
+
+{% block content %}
+<h1>Manage Holds</h1>
+
+<ul class="nav nav-tabs mb-4" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="waiting-tab" data-bs-toggle="tab" data-bs-target="#waiting" type="button">
+            Waiting Holds <span class="badge bg-warning">{{ waiting_holds.count }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="ready-tab" data-bs-toggle="tab" data-bs-target="#ready" type="button">
+            Ready for Pickup <span class="badge bg-success">{{ ready_holds.count }}</span>
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="waiting" role="tabpanel">
+        <h3>Waiting Holds</h3>
+        {% if waiting_holds %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Publication</th>
+                        <th>Borrower</th>
+                        <th>Hold Date</th>
+                        <th>Queue Position</th>
+                        <th>Pickup Location</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hold in waiting_holds %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'catalog:publication_detail' hold.publication.id %}">
+                                {{ hold.publication.title|truncatewords:8 }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{% url 'circulation:borrower_detail' hold.borrower.id %}">
+                                {{ hold.borrower.get_full_name }}
+                            </a>
+                        </td>
+                        <td>{{ hold.hold_date|date:"m/d/Y" }}</td>
+                        <td>{{ hold.queue_position }}</td>
+                        <td>{{ hold.pickup_location }}</td>
+                        <td>
+                            <a href="{% url 'circulation:set_hold_ready' hold.id %}" class="btn btn-sm btn-success">
+                                Set Ready
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No holds waiting</p>
+        {% endif %}
+    </div>
+
+    <div class="tab-pane fade" id="ready" role="tabpanel">
+        <h3>Ready for Pickup</h3>
+        {% if ready_holds %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Publication</th>
+                        <th>Borrower</th>
+                        <th>Ready Date</th>
+                        <th>Expires</th>
+                        <th>Pickup Location</th>
+                        <th>Contact</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hold in ready_holds %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'catalog:publication_detail' hold.publication.id %}">
+                                {{ hold.publication.title|truncatewords:8 }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{% url 'circulation:borrower_detail' hold.borrower.id %}">
+                                {{ hold.borrower.get_full_name }}
+                            </a>
+                        </td>
+                        <td>{{ hold.ready_date|date:"m/d/Y" }}</td>
+                        <td>
+                            {% if hold.expiry_date %}
+                                {{ hold.expiry_date|date:"m/d/Y" }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>{{ hold.pickup_location }}</td>
+                        <td>{{ hold.borrower.email }}</td>
+                        <td>
+                            <a href="{% url 'circulation:complete_hold' hold.id %}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-bag-check"></i> Complete Pickup
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No holds ready for pickup</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'circulation:dashboard' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+{% endblock %}

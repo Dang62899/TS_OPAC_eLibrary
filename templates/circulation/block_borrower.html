@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Block Borrower - e-Library{% endblock %}
+
+{% block content %}
+<h1>Block Borrower</h1>
+
+<div class="alert alert-warning">
+    <strong>Warning:</strong> You are about to block {{ borrower.get_full_name }}. 
+    This will prevent them from checking out items or placing holds.
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5>Borrower: {{ borrower.get_full_name }}</h5>
+        <p>Username: {{ borrower.username }}</p>
+        <p>Email: {{ borrower.email }}</p>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="reason" class="form-label">Reason for Blocking <span class="text-danger">*</span></label>
+                <textarea name="reason" id="reason" class="form-control" rows="3" required></textarea>
+                <small class="text-muted">This reason will be visible to the borrower.</small>
+            </div>
+            
+            <button type="submit" class="btn btn-danger">Block Borrower</button>
+            <a href="{% url 'circulation:borrower_detail' borrower.id %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

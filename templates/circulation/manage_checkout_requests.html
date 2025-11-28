@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Checkout Requests - e-Library{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h3 class="mb-0"><i class="bi bi-cart-check"></i> Manage Checkout Requests</h3>
+        <span class="badge bg-warning">{{ pending_count }} Pending</span>
+    </div>
+    <div class="card-body">
+        <!-- Filter Tabs -->
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item">
+                <a class="nav-link {% if status_filter == 'pending' %}active{% endif %}" href="?status=pending">
+                    <i class="bi bi-clock"></i> Pending ({{ pending_count }})
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if status_filter == 'approved' %}active{% endif %}" href="?status=approved">
+                    <i class="bi bi-check-circle"></i> Approved ({{ approved_count }})
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if status_filter == 'completed' %}active{% endif %}" href="?status=completed">
+                    <i class="bi bi-bag-check"></i> Completed
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if status_filter == 'all' %}active{% endif %}" href="?status=all">
+                    <i class="bi bi-list"></i> All Requests
+                </a>
+            </li>
+        </ul>
+        
+        {% if checkout_requests %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Borrower</th>
+                        <th>Publication</th>
+                        <th>Request Date</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in checkout_requests %}
+                    <tr>
+                        <td>
+                            <strong>{{ req.borrower.get_full_name|default:req.borrower.username }}</strong><br>
+                            <small class="text-muted">{{ req.borrower.email }}</small>
+                        </td>
+                        <td>
+                            <a href="{% url 'catalog:publication_detail' req.publication.id %}">{{ req.publication.title }}</a><br>
+                            <small class="text-muted">{{ req.publication.get_authors_display }}</small>
+                        </td>
+                        <td>{{ req.request_date|date:"M d, Y g:i A" }}</td>
+                        <td>
+                            {% if req.status == 'pending' %}
+                                <span class="badge bg-warning">{{ req.get_status_display }}</span>
+                            {% elif req.status == 'approved' %}
+                                <span class="badge bg-success">{{ req.get_status_display }}</span>
+                                {% if req.pickup_by_date %}
+                                <br><small>Pickup by: {{ req.pickup_by_date|date:"M d" }}</small>
+                                {% endif %}
+                            {% elif req.status == 'completed' %}
+                                <span class="badge bg-primary">{{ req.get_status_display }}</span>
+                            {% elif req.status == 'denied' %}
+                                <span class="badge bg-danger">{{ req.get_status_display }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ req.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if req.notes %}
+                                <small>{{ req.notes|truncatewords:10 }}</small>
+                            {% else %}
+                                <small class="text-muted">—</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if req.status == 'pending' %}
+                                <a href="{% url 'circulation:approve_checkout_request' req.id %}" class="btn btn-sm btn-success">
+                                    <i class="bi bi-check-circle"></i> Approve
+                                </a>
+                                <a href="{% url 'circulation:deny_checkout_request' req.id %}" class="btn btn-sm btn-danger">
+                                    <i class="bi bi-x-circle"></i> Deny
+                                </a>
+                            {% elif req.status == 'approved' %}
+                                <a href="{% url 'circulation:complete_checkout_request' req.id %}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-bag-check"></i> Complete Pickup
+                                </a>
+                            {% elif req.status == 'completed' %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-all"></i> Checked Out
+                                </span>
+                            {% else %}
+                                <small class="text-muted">—</small>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+            <p class="text-muted mt-3">No checkout requests found.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

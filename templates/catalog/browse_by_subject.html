@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Browse by Subject - {{ subject.name }} - e-Library{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'catalog:index' %}">Home</a></li>
+        <li class="breadcrumb-item active">{{ subject.name }}</li>
+    </ol>
+</nav>
+
+<h1>Subject: {{ subject.name }}</h1>
+
+<div class="row">
+    {% for publication in page_obj %}
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <a href="{% url 'catalog:publication_detail' publication.id %}">{{ publication.title }}</a>
+                </h5>
+                <p class="card-text text-muted small">{{ publication.get_authors_display }}</p>
+                <p class="card-text">
+                    <span class="badge bg-info">{{ publication.publication_type }}</span>
+                </p>
+                <p class="card-text small">
+                    {% if publication.is_available %}
+                        <span class="text-success"><i class="bi bi-check-circle"></i> Available</span>
+                    {% else %}
+                        <span class="text-danger"><i class="bi bi-x-circle"></i> Not Available</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p>No publications found for this subject.</p>
+    {% endfor %}
+</div>
+
+{% if page_obj.has_other_pages %}
+<nav>
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+        </li>
+        {% endif %}
+        <li class="page-item active">
+            <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        </li>
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

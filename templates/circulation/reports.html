@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports - e-Library{% endblock %}
+
+{% block content %}
+<h1>Circulation Reports</h1>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-exclamation-triangle"></i> Overdue Items</h5>
+                <p class="card-text">View all items that are currently overdue and borrower information.</p>
+                <a href="{% url 'circulation:overdue_report' %}" class="btn btn-danger">View Report</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-graph-up"></i> Circulation Statistics</h5>
+                <p class="card-text">View circulation statistics, popular items, and active borrowers.</p>
+                <a href="{% url 'circulation:circulation_stats' %}" class="btn btn-primary">View Report</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-people"></i> Borrower List</h5>
+                <p class="card-text">Search and view all library borrowers and their status.</p>
+                <a href="{% url 'circulation:borrower_list' %}" class="btn btn-info">View List</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-bookmark"></i> Manage Holds</h5>
+                <p class="card-text">View and manage all hold requests in the system.</p>
+                <a href="{% url 'circulation:manage_holds' %}" class="btn btn-warning">Manage Holds</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'circulation:dashboard' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+{% endblock %}

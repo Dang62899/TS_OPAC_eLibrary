@@ -1,0 +1,273 @@
+# e-Library Management System
+# Version History
+
+## Version 1.0.0 - November 26, 2025
+
+### Initial Release - Full Feature Implementation
+
+#### Core Features Implemented
+
+**Circulation System:**
+- ✅ Check-out/Check-in with Item ID or ISBN (barcode scanning optional)
+- ✅ Automated due date calculation
+- ✅ Item renewals (up to 2 times)
+- ✅ Item status tracking (8 statuses)
+- ✅ In-transit management between locations
+- ✅ Borrower registration and management
+- ✅ Borrowing limits enforcement
+- ✅ Borrower blocking/suspension with reasons
+- ✅ Hold queue management with positions
+- ✅ Hold shelf management
+- ✅ Automated email notifications (overdue, pre-due, hold ready)
+- ✅ Statistical reports (overdue, circulation stats)
+
+**Public Access Catalog (OPAC):**
+- ✅ Keyword search across all fields
+- ✅ Field-specific search (Title, Author, Subject, Call Number, ISBN)
+- ✅ Advanced search with Boolean capability
+- ✅ Faceted search filters (Type, Language, Date, Availability)
+- ✅ Publication browsing by type, subject, and author
+- ✅ Real-time item status display
+- ✅ Due date display for checked-out items
+- ✅ Hold queue position visibility
+- ✅ Personal account management
+- ✅ Online renewal capability
+- ✅ Hold placement and cancellation
+- ✅ Borrowing history view
+
+**Publication Types:**
+- ✅ Manuals (MAN)
+- ✅ SOPs - Standard Operating Procedures (SOP)
+- ✅ Capstone Projects (CAP)
+- ✅ TTPs - Tactics, Techniques, and Procedures (TTP)
+
+#### Technical Implementation
+
+**Backend:**
+- Django 4.2 framework
+- Custom User model with library features
+- Comprehensive database models
+- Celery task queue for notifications
+- Redis for Celery broker
+- Class-based and function-based views
+- Django forms with validation
+- Django admin customization
+
+**Frontend:**
+- Bootstrap 5 responsive design
+- Bootstrap Icons
+- django-crispy-forms for form rendering
+- Custom CSS and JavaScript
+- Mobile-responsive templates
+- Print-friendly report layouts
+
+**Database Schema:**
+- User (Custom with library fields)
+- Publication (bibliographic records)
+- Item (physical/digital copies)
+- PublicationType
+- Author
+- Subject
+- Publisher
+- Location
+- Loan (checkout records)
+- Hold (reserve requests)
+- InTransit (item transfers)
+- Notification (email tracking)
+
+#### Files & Documentation
+
+**Code Files:** 60+ files
+- Python: 20+ files
+- HTML Templates: 25+ files
+- Configuration: 10+ files
+- Documentation: 5 comprehensive guides
+
+**Documentation Provided:**
+- README.md (comprehensive overview)
+- QUICKSTART.md (quick start guide)
+- INSTALLATION_GUIDE.md (detailed installation)
+- PROJECT_SUMMARY.md (project details)
+- TESTING_CHECKLIST.md (testing procedures)
+- VERSION.txt (this file)
+
+**Setup Scripts:**
+- setup.bat (Windows automated setup)
+- setup.sh (Linux/Mac automated setup)
+
+#### Key Features
+
+**Automation:**
+- Automatic due date calculation
+- Automatic hold queue management
+- Automatic item status updates
+- Scheduled email notifications
+- Statistical data collection
+
+**User Management:**
+- Three user types: Borrower, Staff, Admin
+- Library card number assignment
+- Borrowing limit configuration
+- Block/unblock with reason tracking
+
+**Item Management:**
+- Multiple copies per publication
+- Multiple locations (physical/digital)
+- Comprehensive status tracking
+- Acquisition and circulation statistics
+
+**Reporting:**
+- Overdue items report
+- Circulation statistics (30-day)
+- Most borrowed items
+- Most active borrowers
+- Statistics by publication type
+
+**Search Capabilities:**
+- Full-text search
+- Field-specific search
+- Advanced filters
+- Faceted search
+- Result pagination
+
+#### Configuration Options
+
+All configurable in settings.py:
+- LIBRARY_NAME
+- MAX_ITEMS_PER_BORROWER (default: 5)
+- LOAN_PERIOD_DAYS (default: 14)
+- RENEWAL_LIMIT (default: 2)
+- PRE_DUE_NOTICE_DAYS (default: 2)
+- OVERDUE_GRACE_PERIOD_DAYS (default: 7)
+
+#### Security Features
+
+- CSRF protection
+- Password validation
+- User authentication/authorization
+- Role-based access control
+- Session management
+- SQL injection prevention
+- XSS protection
+
+#### Known Limitations
+
+- Email requires Celery + Redis setup
+- SQLite suitable for development only
+- Single-language interface (English)
+- No fine/fee calculation
+- No barcode generation
+- No patron import/export
+- No Z39.50 integration
+
+#### System Requirements
+
+**Minimum:**
+- Python 3.8+
+- 100MB disk space
+- 512MB RAM
+
+**Recommended:**
+- Python 3.10+
+- 1GB disk space
+- 2GB RAM
+- Redis server (for notifications)
+
+**Supported Platforms:**
+- Windows 10/11
+- Linux (Ubuntu, Debian, etc.)
+- macOS 10.15+
+
+#### Dependencies
+
+Core:
+- Django 4.2
+- Pillow 10.0+
+- django-crispy-forms 2.0+
+- crispy-bootstrap4 2.0+
+
+Optional (for notifications):
+- celery 5.3+
+- django-celery-beat 2.5+
+- redis 5.0+
+
+#### Installation Time
+
+- Automated setup: 5-10 minutes
+- Manual setup: 15-20 minutes
+- Including sample data
+
+#### Test Data Included
+
+When using `create_initial_data`:
+- 4 Publication Types
+- 4 Locations
+- 8 Subjects
+- 4 Authors
+- 1 Publisher
+- 2 Sample Publications
+- 5 Items (copies)
+- 2 Test Users (staff, borrower)
+
+#### License
+
+Provided as-is for educational and library management purposes.
+
+#### Credits
+
+Built with:
+- Django Web Framework
+- Bootstrap CSS Framework
+- Bootstrap Icons
+- Celery Task Queue
+- Redis
+
+---
+
+## Future Development Ideas
+
+**Potential Enhancements:**
+- Fine/fee management
+- Barcode generation and printing
+- Patron import/export (CSV, Excel)
+- SMS notifications
+- Mobile app
+- Self-checkout kiosk mode
+- Advanced analytics dashboard
+- Multi-language support
+- E-book/digital content management
+- Integration with external systems
+- Automated acquisitions
+- Interlibrary loan support
+- Reading lists/recommendations
+- Book reviews and ratings
+- Inventory management
+- Vendor management
+
+**Technical Improvements:**
+- RESTful API
+- GraphQL support
+- Docker containerization
+- Kubernetes orchestration
+- CI/CD pipeline
+- Automated testing suite
+- Performance optimization
+- Caching layer (Redis/Memcached)
+- CDN integration
+- Elasticsearch integration
+
+---
+
+## Support & Contact
+
+For issues, questions, or contributions:
+- Review documentation files
+- Check Django docs: https://docs.djangoproject.com/
+- Check Celery docs: https://docs.celeryproject.org/
+
+---
+
+**Release Date:** November 26, 2025
+**Version:** 1.0.0
+**Status:** Stable - Production Ready (after security configuration)
+**Code Name:** "Foundation Release"
