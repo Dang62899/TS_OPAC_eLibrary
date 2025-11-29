@@ -8,10 +8,15 @@ from django.db.models import Q, Count
 import logging
 from datetime import timedelta
 from .models import Loan, Hold, InTransit, Notification, CheckoutRequest
-from .forms import CheckoutForm, CheckinForm, HoldForm, InTransitForm, BorrowerSearchForm
-    CheckoutForm, CheckinForm, RenewalForm, HoldForm,
-    InTransitForm, BorrowerSearchForm
+from .forms import (
+    CheckoutForm,
+    CheckinForm,
+    HoldForm,
+    InTransitForm,
+    BorrowerSearchForm,
 )
+from django.db.models import F, Value
+from django.db.models.functions import Replace
 from catalog.models import Item, Publication, Location
 from accounts.models import User
 
@@ -118,7 +123,10 @@ def checkin(request):
                 borrower=loan.borrower,
                 notification_type='checkin',
                 title=f'Item Returned: {loan.item.publication.title}',
-                message=f'Thank you for returning "{loan.item.publication.title}". {'Item was returned late.' if was_overdue else 'Item was returned on time.'}',
+                message=(
+                    f"Thank you for returning \"{loan.item.publication.title}\". "
+                    + ("Item was returned late." if was_overdue else "Item was returned on time.")
+                ),
                 loan=loan,
                 action_url='/accounts/my-account/'
             )
@@ -556,14 +564,11 @@ def receive_in_transit(request):
         # If ISBN provided, try to find an in-transit record for that publication
         if isbn:
             try:
-from catalog.models import Publication
                 # Try exact then normalized match (strip hyphens/spaces)
                 normalized = isbn.replace('-', '').replace(' ', '')
                 try:
                     publication = Publication.objects.get(isbn=isbn)
                 except Publication.DoesNotExist:
-from django.db.models import F, Value
-from django.db.models.functions import Replace
                     publication = Publication.objects.annotate(
                         _norm=Replace(Replace(F('isbn'), Value('-'), Value('')), Value(' '), Value(''))
                     ).filter(_norm=normalized).first()
@@ -779,7 +784,7 @@ def request_checkout(request, publication_id):
     if request.method == 'POST':
         notes = request.POST.get('notes', '')
 
-        checkout_request = CheckoutRequest.objects.create(
+        CheckoutRequest.objects.create(
             publication=publication,
             borrower=request.user,
             notes=notes,
@@ -795,7 +800,7 @@ def request_checkout(request, publication_id):
             action_url='/accounts/my-account/'
         )
 
-        messages.success(request, f'Checkout request submitted! Staff will review and notify you when ready for pickup.')
+        messages.success(request, 'Checkout request submitted! Staff will review and notify you when ready for pickup.')
         return redirect('catalog:publication_detail', pk=publication_id)
 
     context = {
@@ -889,7 +894,6 @@ def approve_checkout_request(request, request_id):
                 checkout_request.pickup_by_date = timezone.now() + timedelta(days=pickup_days)
 
                 if pickup_location_id:
-from catalog.models import Location
                     checkout_request.pickup_location = Location.objects.get(pk=pickup_location_id)
 
                 checkout_request.save()
@@ -907,10 +911,9 @@ from catalog.models import Location
             action_url='/accounts/my-account/'
         )
 
-        messages.success(request, f'Checkout request approved. Borrower has been notified.')
+        messages.success(request, 'Checkout request approved. Borrower has been notified.')
         return redirect('circulation:manage_checkout_requests')
 
-from catalog.models import Location
     locations = Location.objects.all()
 
     context = {
@@ -1022,7 +1025,7 @@ def complete_checkout_request(request, request_id):
                 checkout_request.save()
 
         except Item.DoesNotExist:
-            messages.error(request, f"No available item found for this publication.")
+            messages.error(request, "No available item found for this publication.")
             return render(request, 'circulation/complete_checkout_request.html', {
                 'checkout_request': checkout_request,
                 'available_items': Item.objects.filter(

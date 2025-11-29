@@ -89,7 +89,7 @@ class Command(BaseCommand):
 
         # Create Sample Staff User
         if not User.objects.filter(username='staff').exists():
-            staff = User.objects.create_user(
+            User.objects.create_user(
                 username='staff',
                 email='staff@elibrary.com',
                 password='staff123',
@@ -101,7 +101,7 @@ class Command(BaseCommand):
 
         # Create Sample Borrower
         if not User.objects.filter(username='borrower').exists():
-            borrower = User.objects.create_user(
+            User.objects.create_user(
                 username='borrower',
                 email='borrower@elibrary.com',
                 password='borrower123',

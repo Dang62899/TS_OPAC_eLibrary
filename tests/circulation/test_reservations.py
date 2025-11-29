@@ -2,7 +2,7 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from accounts.models import User
 from catalog.models import Publication, Item, Location, PublicationType
-from circulation.models import CheckoutRequest
+from circulation.models import CheckoutRequest, Loan, Hold
 
 class ReservationFlowTests(TestCase):
     def setUp(self):
@@ -32,7 +32,7 @@ class ReservationFlowTests(TestCase):
 
         url = reverse('circulation:approve_checkout_request', args=[self.cr.id])
         data = {'pickup_location': self.loc.id, 'pickup_days': '3'}
-        response = self.client.post(url, data, follow=True)
+        self.client.post(url, data, follow=True)
         self.cr.refresh_from_db()
         self.item1.refresh_from_db()
         self.item2.refresh_from_db()
@@ -49,9 +49,9 @@ class ReservationFlowTests(TestCase):
         self.client.login(username='staff1', password='pass')
         url = reverse('circulation:approve_checkout_request', args=[self.cr.id])
         data = {'pickup_location': self.loc.id, 'pickup_days': '3'}
-        resp1 = self.client.post(url, data, follow=True)
+        self.client.post(url, data, follow=True)
         # Attempt to approve again (should be blocked because status no longer pending)
-        resp2 = self.client.post(url, data, follow=True)
+        self.client.post(url, data, follow=True)
         self.cr.refresh_from_db()
         # second attempt should not change reserved_item
         self.assertEqual(self.cr.status, 'approved')
@@ -70,7 +70,7 @@ class ReservationFlowTests(TestCase):
         # Complete the checkout using the reserved item
         complete_url = reverse('circulation:complete_checkout_request', args=[self.cr.id])
         complete_data = {'item_identifier': str(self.cr.reserved_item.id)}
-        resp = self.client.post(complete_url, complete_data, follow=True)
+        self.client.post(complete_url, complete_data, follow=True)
 
         self.cr.refresh_from_db()
         self.cr.loan.refresh_from_db()
@@ -91,13 +91,12 @@ class ReservationFlowTests(TestCase):
 
         complete_url = reverse('circulation:complete_checkout_request', args=[self.cr.id])
         complete_data = {'item_identifier': str(self.cr.reserved_item.id)}
-        resp1 = self.client.post(complete_url, complete_data, follow=True)
+        self.client.post(complete_url, complete_data, follow=True)
 
         # Attempt to complete again - should not create another loan
-        resp2 = self.client.post(complete_url, complete_data, follow=True)
+        self.client.post(complete_url, complete_data, follow=True)
 
         # Only one loan should exist related to this checkout request
-from circulation.models import Loan
         loans = Loan.objects.filter(item__publication=self.pub)
         self.assertEqual(loans.count(), 1)
         self.cr.refresh_from_db()
@@ -106,28 +105,26 @@ from circulation.models import Loan
     def test_set_hold_ready_reserves_item(self):
         # Simulate staff marking a hold ready and reserving an item
         # Place a hold for another publication
-        hold = self.cr  # use existing hold pattern from checkout tests (reuse checkout_request)
+        # use existing checkout_request pattern (not used directly here)
         # Create a hold-like object: convert checkout_request to behave like a hold
         # For testing, use the Hold flow by creating a Hold for the publication
-from circulation.models import Hold
         h = Hold.objects.create(publication=self.pub, borrower=self.borrower, pickup_location=self.loc, status='waiting')
 
         # Login as staff and mark ready
         self.client.login(username='staff1', password='pass')
         url = reverse('circulation:set_hold_ready', args=[h.id])
-        resp = self.client.post(url, follow=True)
+        self.client.post(url, follow=True)
         h.refresh_from_db()
         # Ensure hold moved to ready
         self.assertEqual(h.status, 'ready')
 
     def test_concurrent_set_hold_ready_does_not_double_reserve(self):
-from circulation.models import Hold
         h = Hold.objects.create(publication=self.pub, borrower=self.borrower, pickup_location=self.loc, status='waiting')
         self.client.login(username='staff1', password='pass')
         url = reverse('circulation:set_hold_ready', args=[h.id])
         # First staff marks ready
-        resp1 = self.client.post(url, follow=True)
+        self.client.post(url, follow=True)
         # Second attempt should not reserve another item and should report already ready
-        resp2 = self.client.post(url, follow=True)
+        self.client.post(url, follow=True)
         h.refresh_from_db()
         self.assertEqual(h.status, 'ready')

@@ -6,9 +6,7 @@ from datetime import datetime
 import random
 
 from catalog.models import PublicationType, Subject, Author, Publisher, Location, Publication, Item
-    PublicationType, Subject, Author, Publisher,
-    Location, Publication, Item
-)
+
 
 class Command(BaseCommand):
     help = 'Creates sample publications for demonstration purposes'
@@ -137,12 +135,12 @@ class Command(BaseCommand):
         for idx, manual_data in enumerate(manuals, 1):
             # Create authors
             author1, _ = Author.objects.get_or_create(
-                first_name=f'John',
+                first_name='John',
                 last_name=f'Tech{idx}',
                 defaults={'bio': 'Experienced IT professional and technical writer'}
             )
             author2, _ = Author.objects.get_or_create(
-                first_name=f'Jane',
+                first_name='Jane',
                 last_name=f'Expert{idx}',
                 defaults={'bio': 'Senior systems engineer and consultant'}
             )

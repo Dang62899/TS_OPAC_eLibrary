@@ -164,7 +164,7 @@ class Item(models.Model):
     def get_status_display_with_date(self):
         """Get status with due date if on loan"""
         if self.status == 'on_loan':
-from circulation.models import Loan
+            from circulation.models import Loan
             try:
                 loan = Loan.objects.get(item=self, status='active')
                 return f"On Loan - Due {loan.due_date.strftime('%m/%d/%Y')}"

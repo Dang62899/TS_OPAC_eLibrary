@@ -61,7 +61,6 @@ def process_file(path: Path) -> int:
     # process imports in reverse lineno order to avoid shifting lines
     for lineno, node in sorted(cleaner.imports, key=lambda x: -x[0]):
         idx = lineno - 1
-        line = lines[idx]
         if isinstance(node, ast.Import):
             # build list of names and see which are used
             keep_aliases = []

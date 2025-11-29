@@ -87,5 +87,4 @@ class SearchForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-from .models import PublicationType
         self.fields['publication_type'].queryset = PublicationType.objects.all()

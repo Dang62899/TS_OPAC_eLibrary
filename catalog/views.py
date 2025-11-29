@@ -100,7 +100,7 @@ def publication_detail(request, pk):
     hold = None
     checkout_request = None
     if request.user.is_authenticated:
-from circulation.models import Hold, CheckoutRequest
+        from circulation.models import Hold, CheckoutRequest
         try:
             hold = Hold.objects.get(
                 publication=publication,

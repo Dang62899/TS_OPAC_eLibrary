@@ -6,17 +6,18 @@ import django
 from datetime import timedelta
 from django.utils import timezone
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'elibrary.settings')
-django.setup()
-
-from catalog.models import Publication, Item, Author, Subject, PublicationType, Location
-from circulation.models import Loan
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
 
 def create_test_books():
     """Create test publications with various availability scenarios"""
+
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'elibrary.settings')
+    django.setup()
+
+    from catalog.models import Publication, Item, Author, Subject, PublicationType, Location
+    from circulation.models import Loan
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
 
     # Get or create required data
     author, _ = Author.objects.get_or_create(
@@ -52,7 +53,7 @@ def create_test_books():
     if created:
         borrower.set_password('test123')
         borrower.save()
-        print(f"Created test user: testuser / test123")
+        print("Created test user: testuser / test123")
 
     print("\n=== Creating Test Books ===\n")
 
@@ -212,13 +213,14 @@ def create_test_books():
         print(f"✓ Created: {pub5.title} (0 available, 1 on loan)")
 
     print("\n=== Summary ===")
-    print(f"Total test publications created: 5")
+    print("Total test publications created: 5")
     print(f"Total test items created: {2 + 2 + 3 + 5 + 1} items")
-    print(f"\nTest user: testuser / test123")
-    print(f"\nYou can now test:")
+    print("\nTest user: testuser / test123")
+    print("\nYou can now test:")
     print("  - Checkout requests for available books (IDs: {}, {})".format(pub1.id, pub2.id))
     print("  - Holds/reservations for unavailable books (IDs: {}, {}, {})".format(pub3.id, pub4.id, pub5.id))
     print("\nAccess these books at: http://127.0.0.1:8000/catalog/")
+
 
 if __name__ == '__main__':
     create_test_books()

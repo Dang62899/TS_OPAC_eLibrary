@@ -48,7 +48,7 @@ def register(request):
     if request.method == 'POST':
         form = BorrowerRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save()
+            form.save()
             messages.success(request, 'Your account has been created! You can now log in.')
             return redirect('accounts:login')
     else:
