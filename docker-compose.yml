@@ -1,0 +1,148 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: elibrary_db
+    environment:
+      POSTGRES_DB: elibrary_db
+      POSTGRES_USER: elibrary_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U elibrary_user -d elibrary_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - elibrary_network
+
+  # Redis Cache & Celery Broker
+  redis:
+    image: redis:7-alpine
+    container_name: elibrary_redis
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - elibrary_network
+
+  # Django Application
+  web:
+    build: .
+    container_name: elibrary_web
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn --bind 0.0.0.0:8000 --workers 4 --worker-class sync elibrary.wsgi:application"
+    environment:
+      ELIBRARY_PRODUCTION: 'True'
+      ELIBRARY_DEBUG: 'False'
+      ELIBRARY_SECRET_KEY: ${ELIBRARY_SECRET_KEY}
+      ELIBRARY_ALLOWED_HOSTS: ${ELIBRARY_ALLOWED_HOSTS}
+      DATABASE_URL: postgresql://elibrary_user:${DB_PASSWORD}@db:5432/elibrary_db
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/1
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+      SENTRY_DSN: ${SENTRY_DSN}
+    volumes:
+      - .:/app
+      - static_volume:/app/static
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - elibrary_network
+    restart: unless-stopped
+
+  # Celery Worker
+  celery:
+    build: .
+    container_name: elibrary_celery
+    command: celery -A elibrary worker -l info
+    environment:
+      ELIBRARY_PRODUCTION: 'True'
+      ELIBRARY_DEBUG: 'False'
+      ELIBRARY_SECRET_KEY: ${ELIBRARY_SECRET_KEY}
+      ELIBRARY_ALLOWED_HOSTS: ${ELIBRARY_ALLOWED_HOSTS}
+      DATABASE_URL: postgresql://elibrary_user:${DB_PASSWORD}@db:5432/elibrary_db
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/1
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+    networks:
+      - elibrary_network
+    restart: unless-stopped
+
+  # Celery Beat (scheduled tasks)
+  celery-beat:
+    build: .
+    container_name: elibrary_celery_beat
+    command: celery -A elibrary beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    environment:
+      ELIBRARY_PRODUCTION: 'True'
+      ELIBRARY_DEBUG: 'False'
+      ELIBRARY_SECRET_KEY: ${ELIBRARY_SECRET_KEY}
+      ELIBRARY_ALLOWED_HOSTS: ${ELIBRARY_ALLOWED_HOSTS}
+      DATABASE_URL: postgresql://elibrary_user:${DB_PASSWORD}@db:5432/elibrary_db
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/1
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+    networks:
+      - elibrary_network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: elibrary_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - static_volume:/app/static:ro
+      - media_volume:/app/media:ro
+    depends_on:
+      - web
+    networks:
+      - elibrary_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  static_volume:
+    driver: local
+  media_volume:
+    driver: local
+
+networks:
+  elibrary_network:
+    driver: bridge
