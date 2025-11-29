@@ -1,6 +1,7 @@
 """
 URL configuration for elibrary project.
 """
+
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -20,10 +21,10 @@ admin.site.login = superuser_required(admin.site.login)
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),  # Only accessible to superusers
-    path('', include('catalog.urls')),
-    path('circulation/', include('circulation.urls')),
-    path('accounts/', include('accounts.urls')),
+    path("admin/", admin.site.urls),  # Only accessible to superusers
+    path("", include("catalog.urls")),
+    path("circulation/", include("circulation.urls")),
+    path("accounts/", include("accounts.urls")),
 ]
 
 if settings.DEBUG:

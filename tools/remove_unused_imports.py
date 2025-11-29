@@ -12,7 +12,19 @@ import ast
 from pathlib import Path
 from typing import Set, Tuple
 
-EXCLUDE_PATTERNS = [".venv", "venv", "env", "ENV", "build", "dist", "__pycache__", "migrations", "static", "media", "templates"]
+EXCLUDE_PATTERNS = [
+    ".venv",
+    "venv",
+    "env",
+    "ENV",
+    "build",
+    "dist",
+    "__pycache__",
+    "migrations",
+    "static",
+    "media",
+    "templates",
+]
 
 
 def is_excluded(path: Path) -> bool:

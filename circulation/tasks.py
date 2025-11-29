@@ -17,13 +17,16 @@ def send_notification_email(notification):
     """
     try:
         # Get email template based on notification type
-        html_content = render_to_string('circulation/emails/notification_email.html', {
-            'notification': notification,
-            'borrower': notification.borrower,
-            'loan': notification.loan,
-            'hold': notification.hold,
-            'site_name': getattr(settings, 'LIBRARY_NAME', 'e-Library'),
-        })
+        html_content = render_to_string(
+            "circulation/emails/notification_email.html",
+            {
+                "notification": notification,
+                "borrower": notification.borrower,
+                "loan": notification.loan,
+                "hold": notification.hold,
+                "site_name": getattr(settings, "LIBRARY_NAME", "e-Library"),
+            },
+        )
 
         # Create plain text version
         text_content = strip_tags(html_content)
@@ -55,18 +58,18 @@ def send_notification_email(notification):
         notification.save()
         return False
 
+
 @shared_task
-
-
 def send_pending_notification_emails():
     """
     Celery task to send all pending notification emails
     Runs every 5 minutes
     """
-    pending_notifications = Notification.objects.filter(
-        email_sent=False,
-        borrower__email__isnull=False
-    ).exclude(borrower__email='')[:50]  # Limit to 50 per run
+    pending_notifications = Notification.objects.filter(email_sent=False, borrower__email__isnull=False).exclude(
+        borrower__email=""
+    )[
+        :50
+    ]  # Limit to 50 per run
 
     sent_count = 0
     for notification in pending_notifications:
@@ -75,9 +78,8 @@ def send_pending_notification_emails():
 
     return f"Sent {sent_count} notification emails"
 
+
 @shared_task
-
-
 def check_due_soon_items():
     """
     Check for items due in 3 days and create notifications
@@ -85,10 +87,9 @@ def check_due_soon_items():
     """
     three_days_from_now = timezone.now().date() + timedelta(days=3)
 
-    due_soon_loans = Loan.objects.filter(
-        status='active',
-        due_date=three_days_from_now
-    ).select_related('borrower', 'item__publication')
+    due_soon_loans = Loan.objects.filter(status="active", due_date=three_days_from_now).select_related(
+        "borrower", "item__publication"
+    )
 
     created_count = 0
     for loan in due_soon_loans:
@@ -96,36 +97,34 @@ def check_due_soon_items():
         existing = Notification.objects.filter(
             borrower=loan.borrower,
             loan=loan,
-            notification_type='due_soon',
-            created_date__gte=timezone.now() - timedelta(days=1)
+            notification_type="due_soon",
+            created_date__gte=timezone.now() - timedelta(days=1),
         ).exists()
 
         if not existing:
             Notification.objects.create(
                 borrower=loan.borrower,
                 loan=loan,
-                notification_type='due_soon',
-                title=f'Item Due Soon: {loan.item.publication.title}',
+                notification_type="due_soon",
+                title=f"Item Due Soon: {loan.item.publication.title}",
                 message=f'Your borrowed item "{loan.item.publication.title}" is due on {loan.due_date}. Please return it on time to avoid late fees.',
-                action_url='/accounts/my-account/'
+                action_url="/accounts/my-account/",
             )
             created_count += 1
 
     return f"Created {created_count} due-soon notifications"
 
+
 @shared_task
-
-
 def check_overdue_items():
     """
     Check for overdue items and create notifications
     Runs daily
     """
     today = timezone.now().date()
-    overdue_loans = Loan.objects.filter(
-        status='active',
-        due_date__lt=today
-    ).select_related('borrower', 'item__publication')
+    overdue_loans = Loan.objects.filter(status="active", due_date__lt=today).select_related(
+        "borrower", "item__publication"
+    )
 
     created_count = 0
     for loan in overdue_loans:
@@ -137,26 +136,25 @@ def check_overdue_items():
             existing = Notification.objects.filter(
                 borrower=loan.borrower,
                 loan=loan,
-                notification_type='overdue',
-                created_date__gte=timezone.now() - timedelta(hours=23)
+                notification_type="overdue",
+                created_date__gte=timezone.now() - timedelta(hours=23),
             ).exists()
 
             if not existing:
                 Notification.objects.create(
                     borrower=loan.borrower,
                     loan=loan,
-                    notification_type='overdue',
-                    title=f'Overdue: {loan.item.publication.title}',
+                    notification_type="overdue",
+                    title=f"Overdue: {loan.item.publication.title}",
                     message=f'Your item "{loan.item.publication.title}" is {days_overdue} days overdue. Please return it immediately to avoid additional fees.',
-                    action_url='/accounts/my-account/'
+                    action_url="/accounts/my-account/",
                 )
                 created_count += 1
 
     return f"Created {created_count} overdue notifications"
 
+
 @shared_task
-
-
 def check_expiring_holds():
     """
     Check for holds expiring soon and create notifications
@@ -165,10 +163,8 @@ def check_expiring_holds():
     tomorrow = timezone.now() + timedelta(days=1)
 
     expiring_holds = Hold.objects.filter(
-        status='ready',
-        expiry_date__lte=tomorrow,
-        expiry_date__gte=timezone.now()
-    ).select_related('borrower', 'publication')
+        status="ready", expiry_date__lte=tomorrow, expiry_date__gte=timezone.now()
+    ).select_related("borrower", "publication")
 
     created_count = 0
     for hold in expiring_holds:
@@ -176,18 +172,18 @@ def check_expiring_holds():
         existing = Notification.objects.filter(
             borrower=hold.borrower,
             hold=hold,
-            notification_type='hold_expiring',
-            created_date__gte=timezone.now() - timedelta(days=1)
+            notification_type="hold_expiring",
+            created_date__gte=timezone.now() - timedelta(days=1),
         ).exists()
 
         if not existing:
             Notification.objects.create(
                 borrower=hold.borrower,
                 hold=hold,
-                notification_type='hold_expiring',
-                title=f'Hold Expiring Soon: {hold.publication.title}',
+                notification_type="hold_expiring",
+                title=f"Hold Expiring Soon: {hold.publication.title}",
                 message=f'Your hold for "{hold.publication.title}" will expire on {hold.expiry_date.strftime("%Y-%m-%d")}. Please pick it up soon.',
-                action_url='/accounts/my-account/'
+                action_url="/accounts/my-account/",
             )
             created_count += 1
 

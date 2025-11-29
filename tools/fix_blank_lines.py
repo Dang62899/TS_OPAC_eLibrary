@@ -8,8 +8,17 @@ import ast
 from pathlib import Path
 
 EXCLUDE_PATTERNS = [
-    ".venv", "venv", "env", "ENV", "build", "dist",
-    "__pycache__", "migrations", "static", "media", "templates"
+    ".venv",
+    "venv",
+    "env",
+    "ENV",
+    "build",
+    "dist",
+    "__pycache__",
+    "migrations",
+    "static",
+    "media",
+    "templates",
 ]
 
 
@@ -51,7 +60,7 @@ def fix_blank_lines(path: Path) -> bool:
         # Count blank lines before this definition
         blank_before = 0
         check_idx = idx - 1
-        while check_idx >= 0 and lines[check_idx].strip() == '':
+        while check_idx >= 0 and lines[check_idx].strip() == "":
             blank_before += 1
             check_idx -= 1
 
@@ -59,11 +68,11 @@ def fix_blank_lines(path: Path) -> bool:
         if check_idx >= 0 and blank_before < 2:
             lines_to_add = 2 - blank_before
             for _ in range(lines_to_add):
-                lines.insert(idx, '')
+                lines.insert(idx, "")
             modified = True
 
     if modified:
-        path.write_text('\n'.join(lines) + '\n', encoding='utf8')
+        path.write_text("\n".join(lines) + "\n", encoding="utf8")
         return True
 
     return False

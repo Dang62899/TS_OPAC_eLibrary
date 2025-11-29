@@ -12,15 +12,24 @@ from pathlib import Path
 import re
 
 EXCLUDE_DIRS = {
-    '.venv', 'venv', 'env', 'ENV', 'build', 'dist',
-    '__pycache__', 'migrations', 'static', 'media', 'templates'
+    ".venv",
+    "venv",
+    "env",
+    "ENV",
+    "build",
+    "dist",
+    "__pycache__",
+    "migrations",
+    "static",
+    "media",
+    "templates",
 }
 
-IMPORT_RE = re.compile(r'^(from)\s+([A-Za-z_][A-Za-z0-9_]*)\s+import\s+(.*)$')
+IMPORT_RE = re.compile(r"^(from)\s+([A-Za-z_][A-Za-z0-9_]*)\s+import\s+(.*)$")
 
 
 def is_package_dir(p: Path) -> bool:
-    return (p / '__init__.py').exists()
+    return (p / "__init__.py").exists()
 
 
 def process_file(path: Path) -> int:
@@ -28,7 +37,7 @@ def process_file(path: Path) -> int:
     if not is_package_dir(dirp):
         return 0
     changed = 0
-    lines = path.read_text(encoding='utf8').splitlines()
+    lines = path.read_text(encoding="utf8").splitlines()
     out = []
     for line in lines:
         m = IMPORT_RE.match(line.strip())
@@ -45,13 +54,13 @@ def process_file(path: Path) -> int:
         out.append(line)
 
     if changed:
-        path.write_text('\n'.join(out) + '\n', encoding='utf8')
+        path.write_text("\n".join(out) + "\n", encoding="utf8")
     return changed
 
 
 def main():
     root = Path(__file__).resolve().parents[1]
-    py_files = list(root.rglob('*.py'))
+    py_files = list(root.rglob("*.py"))
     total = 0
     for p in py_files:
         if any(part in EXCLUDE_DIRS for part in p.parts):
@@ -59,8 +68,8 @@ def main():
         if p.samefile(Path(__file__)):
             continue
         total += process_file(p)
-    print(f'Rewrote {total} imports to relative form')
+    print(f"Rewrote {total} imports to relative form")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

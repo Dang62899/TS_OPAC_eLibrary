@@ -14,7 +14,19 @@ Run: `python tools/auto_fix_trivial_flake8.py`
 import re
 from pathlib import Path
 
-EXCLUDE_PATTERNS = [".venv", "venv", "env", "ENV", "build", "dist", "__pycache__", "migrations", "static", "media", "templates"]
+EXCLUDE_PATTERNS = [
+    ".venv",
+    "venv",
+    "env",
+    "ENV",
+    "build",
+    "dist",
+    "__pycache__",
+    "migrations",
+    "static",
+    "media",
+    "templates",
+]
 
 
 def is_excluded(path: Path) -> bool:

@@ -3,7 +3,7 @@ import django
 
 
 def main():
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'elibrary.settings')
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "elibrary.settings")
     django.setup()
 
     from django.contrib.auth import get_user_model
@@ -15,8 +15,8 @@ def main():
     print("=== CURRENT SYSTEM STATE ===\n")
 
     # Get users
-    student = User.objects.get(username='student')
-    admin = User.objects.get(username='admin')
+    student = User.objects.get(username="student")
+    admin = User.objects.get(username="admin")
 
     print(f"Students: {student.username} ({student.email})")
     print(f"Staff: {admin.username} ({admin.email})")
@@ -26,15 +26,17 @@ def main():
         try:
             pub = Publication.objects.get(id=pub_id)
             items = Item.objects.filter(publication=pub)
-            available_count = items.filter(status='available').count()
-            on_loan_count = items.filter(status='on_loan').count()
-            on_shelf_count = items.filter(status='on_hold_shelf').count()
+            available_count = items.filter(status="available").count()
+            on_loan_count = items.filter(status="on_loan").count()
+            on_shelf_count = items.filter(status="on_hold_shelf").count()
 
             print(f"📚 {pub.title}")
-            print(f"   Total: {items.count()} | Available: {available_count} | On Loan: {on_loan_count} | Hold Shelf: {on_shelf_count}")
+            print(
+                f"   Total: {items.count()} | Available: {available_count} | On Loan: {on_loan_count} | Hold Shelf: {on_shelf_count}"
+            )
             for item in items:
                 # Show Item ID and barcode if present
-                barcode_display = item.barcode if getattr(item, 'barcode', None) else 'N/A'
+                barcode_display = item.barcode if getattr(item, "barcode", None) else "N/A"
                 print(f"      - ID {item.id} | Barcode: {barcode_display} | Status: {item.status}")
             print()
         except Publication.DoesNotExist:
@@ -52,7 +54,9 @@ def main():
     holds = Hold.objects.all()
     if holds.exists():
         for hold in holds:
-            print(f"ID: {hold.id} | {hold.publication.title} | Status: {hold.status} | Borrower: {hold.borrower.username}")
+            print(
+                f"ID: {hold.id} | {hold.publication.title} | Status: {hold.status} | Borrower: {hold.borrower.username}"
+            )
     else:
         print("No holds")
 
@@ -80,5 +84,5 @@ def main():
     print("   - This proves the fix works!")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
