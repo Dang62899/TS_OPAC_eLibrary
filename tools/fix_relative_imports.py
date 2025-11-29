@@ -11,7 +11,10 @@ This is conservative and only rewrites simple `from NAME import ...` forms where
 from pathlib import Path
 import re
 
-EXCLUDE_DIRS = {'.venv','venv','env','ENV','build','dist','__pycache__','migrations','static','media','templates'}
+EXCLUDE_DIRS = {
+    '.venv', 'venv', 'env', 'ENV', 'build', 'dist',
+    '__pycache__', 'migrations', 'static', 'media', 'templates'
+}
 
 IMPORT_RE = re.compile(r'^(from)\s+([A-Za-z_][A-Za-z0-9_]*)\s+import\s+(.*)$')
 
