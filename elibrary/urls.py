@@ -14,8 +14,10 @@ def superuser_required(view_func):
     decorated_view_func = user_passes_test(lambda u: u.is_superuser)(view_func)
     return decorated_view_func
 
+
 # Wrap admin.site.urls with superuser check
 admin.site.login = superuser_required(admin.site.login)
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),  # Only accessible to superusers

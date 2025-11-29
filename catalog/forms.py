@@ -25,7 +25,12 @@ class PublicationForm(forms.ModelForm):
             'pages': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Number of pages'}),
             'call_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Classification number'}),
             'abstract': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Brief description'}),
-            'summary': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Detailed summary (optional)'}),
+            'summary': forms.Textarea(
+                attrs={
+                    'class': 'form-control', 'rows': 4,
+                    'placeholder': 'Detailed summary (optional)'
+                }
+            ),
             'cover_image': forms.FileInput(attrs={'class': 'form-control'}),
         }
 

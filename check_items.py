@@ -25,7 +25,7 @@ def main():
         items = Item.objects.filter(publication=ready_hold.publication)
         print(f'Total items: {items.count()}')
         for item in items:
-                print(f'  - Item ID: {item.barcode}, Status: {item.status}')
+            print(f'  - Item ID: {item.barcode}, Status: {item.status}')
 
         print('\nItems matching query (available or on_hold_shelf):')
         available_items = items.filter(status__in=['available', 'on_hold_shelf'])

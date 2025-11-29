@@ -7,14 +7,14 @@ class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name', 'last_name', 'phone',
-                 'address', 'date_of_birth')
+                  'address', 'date_of_birth')
 
 
 class CustomUserChangeForm(UserChangeForm):
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name', 'last_name', 'phone',
-                 'address', 'date_of_birth')
+                  'address', 'date_of_birth')
 
 
 class BorrowerRegistrationForm(UserCreationForm):
@@ -26,7 +26,7 @@ class BorrowerRegistrationForm(UserCreationForm):
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name', 'last_name', 'password1',
-                 'password2', 'phone', 'address', 'date_of_birth')
+                  'password2', 'phone', 'address', 'date_of_birth')
 
     def save(self, commit=True):
         user = super().save(commit=False)
