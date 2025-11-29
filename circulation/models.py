@@ -4,6 +4,7 @@ from django.conf import settings
 from datetime import timedelta
 from catalog.models import Item, Publication
 
+
 class Loan(models.Model):
     """Record of item checkout/loan"""
     STATUS_CHOICES = [
@@ -96,6 +97,7 @@ class Loan(models.Model):
             return True
         return False
 
+
 class Hold(models.Model):
     """Hold/reserve request for a publication"""
     STATUS_CHOICES = [
@@ -148,6 +150,7 @@ class Hold(models.Model):
         self.queue_position = waiting_holds + 1
         self.save()
 
+
 class InTransit(models.Model):
     """Track items in transit between locations"""
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='transits')
@@ -188,6 +191,7 @@ class InTransit(models.Model):
         self.item.status = 'available'
         self.item.save()
         self.save()
+
 
 class Notification(models.Model):
     """User notifications for in-app and email alerts"""
@@ -278,6 +282,7 @@ class Notification(models.Model):
             'fine_added': 'warning',
         }
         return classes.get(self.notification_type, 'info')
+
 
 class CheckoutRequest(models.Model):
     """User request to checkout a book (instead of going to library)"""

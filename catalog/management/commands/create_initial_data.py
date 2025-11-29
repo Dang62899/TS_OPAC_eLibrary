@@ -5,6 +5,7 @@ from datetime import date
 
 User = get_user_model()
 
+
 class Command(BaseCommand):
     help = 'Create initial data for the e-library system'
 

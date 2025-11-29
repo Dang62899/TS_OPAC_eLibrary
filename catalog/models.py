@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.urls import reverse
 
+
 class PublicationType(models.Model):
     """Types of publications: Manuals, SOPs, Capstone Projects, TTPs"""
     name = models.CharField(max_length=100, unique=True)
@@ -14,6 +15,7 @@ class PublicationType(models.Model):
     def __str__(self):
         return self.name
 
+
 class Subject(models.Model):
     """Subject categories for publications"""
     name = models.CharField(max_length=200, unique=True)
@@ -23,6 +25,7 @@ class Subject(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class Author(models.Model):
     """Authors of publications"""
@@ -36,6 +39,7 @@ class Author(models.Model):
     def __str__(self):
         return f"{self.last_name}, {self.first_name}"
 
+
 class Publisher(models.Model):
     """Publishers of publications"""
     name = models.CharField(max_length=200, unique=True)
@@ -47,6 +51,7 @@ class Publisher(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class Location(models.Model):
     """Physical or digital locations in the library"""
@@ -60,6 +65,7 @@ class Location(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.code})"
+
 
 class Publication(models.Model):
     """Main publication/book record"""
@@ -122,6 +128,7 @@ class Publication(models.Model):
     def is_available(self):
         """Check if any copy is available"""
         return self.get_available_copies_count() > 0
+
 
 class Item(models.Model):
     """Physical or digital copy of a publication"""

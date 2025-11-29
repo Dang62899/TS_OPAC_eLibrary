@@ -3,10 +3,12 @@ import re
 
 from catalog.models import Publication
 
+
 def normalize_isbn(isbn):
     if not isbn:
         return ''
     return re.sub(r"[\s-]+", "", isbn).upper()
+
 
 class Command(BaseCommand):
     help = 'Backfill Publication.normalized_isbn from existing isbn values.'

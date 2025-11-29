@@ -10,6 +10,7 @@ from .decorators import admin_required, staff_or_admin_required
 from circulation.models import Loan, Hold
 from .models import User
 
+
 def custom_login(request):
     """Custom login view that redirects based on user type"""
     if request.user.is_authenticated:
@@ -43,6 +44,7 @@ def custom_login(request):
 
     return render(request, 'accounts/login.html', {'form': form})
 
+
 def register(request):
     """Register a new borrower"""
     if request.method == 'POST':
@@ -56,11 +58,15 @@ def register(request):
     return render(request, 'accounts/register.html', {'form': form})
 
 @login_required
+
+
 def profile(request):
     """View user profile"""
     return render(request, 'accounts/profile.html')
 
 @login_required
+
+
 def edit_profile(request):
     """Edit user profile"""
     if request.method == 'POST':
@@ -74,6 +80,8 @@ def edit_profile(request):
     return render(request, 'accounts/edit_profile.html', {'form': form})
 
 @login_required
+
+
 def my_account(request):
     """View borrower's account - loans and holds"""
     from circulation.models import CheckoutRequest
@@ -108,6 +116,8 @@ def my_account(request):
 
 @login_required
 @staff_or_admin_required
+
+
 def manage_users(request):
     """Staff/Admin view to manage users"""
     users = User.objects.all().order_by('-date_joined')
@@ -139,6 +149,8 @@ def manage_users(request):
 
 @login_required
 @admin_required
+
+
 def edit_user(request, user_id):
     """Admin only - Edit any user"""
     user = get_object_or_404(User, id=user_id)
@@ -154,6 +166,8 @@ def edit_user(request, user_id):
 
 @login_required
 @admin_required
+
+
 def delete_user(request, user_id):
     """Admin only - Delete a user"""
     user = get_object_or_404(User, id=user_id)

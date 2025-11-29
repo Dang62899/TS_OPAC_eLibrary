@@ -1,6 +1,7 @@
 from django import forms
 from .models import Publication, PublicationType, Item
 
+
 class PublicationForm(forms.ModelForm):
     """Form for creating and editing publications"""
     class Meta:
@@ -28,6 +29,7 @@ class PublicationForm(forms.ModelForm):
             'cover_image': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
+
 class ItemForm(forms.ModelForm):
     """Form for adding items (copies) to publications"""
     class Meta:
@@ -39,6 +41,7 @@ class ItemForm(forms.ModelForm):
             'status': forms.Select(attrs={'class': 'form-select'}),
             'condition': forms.Select(attrs={'class': 'form-select'}),
         }
+
 
 class SearchForm(forms.Form):
     """Advanced search form for catalog"""

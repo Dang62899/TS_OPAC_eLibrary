@@ -7,6 +7,7 @@ from .models import Publication, PublicationType, Subject, Author
 from .forms import SearchForm, PublicationForm, ItemForm
 from accounts.decorators import admin_required, staff_or_admin_required
 
+
 def index(request):
     """Homepage with featured publications"""
     recent_publications = Publication.objects.all().order_by('-date_added')[:8]
@@ -19,6 +20,7 @@ def index(request):
         'publication_types': publication_types,
     }
     return render(request, 'catalog/index.html', context)
+
 
 def search(request):
     """Advanced search functionality"""
@@ -91,6 +93,7 @@ def search(request):
     }
     return render(request, 'catalog/search.html', context)
 
+
 def publication_detail(request, pk):
     """Detailed view of a publication"""
     publication = get_object_or_404(Publication, pk=pk)
@@ -128,6 +131,7 @@ def publication_detail(request, pk):
     }
     return render(request, 'catalog/publication_detail.html', context)
 
+
 def browse_by_type(request, type_id):
     """Browse publications by type"""
     publication_type = get_object_or_404(PublicationType, pk=type_id)
@@ -145,6 +149,7 @@ def browse_by_type(request, type_id):
     }
     return render(request, 'catalog/browse_by_type.html', context)
 
+
 def browse_by_subject(request, subject_id):
     """Browse publications by subject"""
     subject = get_object_or_404(Subject, pk=subject_id)
@@ -161,6 +166,7 @@ def browse_by_subject(request, subject_id):
         'page_obj': page_obj,
     }
     return render(request, 'catalog/browse_by_subject.html', context)
+
 
 def browse_by_author(request, author_id):
     """Browse publications by author"""
@@ -181,6 +187,8 @@ def browse_by_author(request, author_id):
 
 @login_required
 @staff_or_admin_required
+
+
 def manage_publications(request):
     """Staff/Admin view to manage publications"""
     publications = Publication.objects.all().select_related('publication_type').order_by('-date_added')
@@ -213,6 +221,8 @@ def manage_publications(request):
 
 @login_required
 @admin_required
+
+
 def delete_publication(request, pk):
     """Admin only - Delete a publication"""
     publication = get_object_or_404(Publication, pk=pk)
@@ -225,6 +235,8 @@ def delete_publication(request, pk):
 
 @login_required
 @staff_or_admin_required
+
+
 def add_publication(request):
     """Staff/Admin - Add a new publication"""
     if request.method == 'POST':
@@ -240,6 +252,8 @@ def add_publication(request):
 
 @login_required
 @staff_or_admin_required
+
+
 def edit_publication(request, pk):
     """Staff/Admin - Edit an existing publication"""
     publication = get_object_or_404(Publication, pk=pk)
@@ -256,6 +270,8 @@ def edit_publication(request, pk):
 
 @login_required
 @staff_or_admin_required
+
+
 def add_items(request, pk):
     """Staff/Admin - Add items (copies) to a publication"""
     publication = get_object_or_404(Publication, pk=pk)

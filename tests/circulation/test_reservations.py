@@ -4,6 +4,7 @@ from accounts.models import User
 from catalog.models import Publication, Item, Location, PublicationType
 from circulation.models import CheckoutRequest, Loan, Hold
 
+
 class ReservationFlowTests(TestCase):
     def setUp(self):
         # Create users

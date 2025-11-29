@@ -9,6 +9,7 @@ from .models import Loan, Hold, Notification
 import logging
 import traceback
 
+
 def send_notification_email(notification):
     """
     Send email for a notification
@@ -55,6 +56,8 @@ def send_notification_email(notification):
         return False
 
 @shared_task
+
+
 def send_pending_notification_emails():
     """
     Celery task to send all pending notification emails
@@ -73,6 +76,8 @@ def send_pending_notification_emails():
     return f"Sent {sent_count} notification emails"
 
 @shared_task
+
+
 def check_due_soon_items():
     """
     Check for items due in 3 days and create notifications
@@ -109,6 +114,8 @@ def check_due_soon_items():
     return f"Created {created_count} due-soon notifications"
 
 @shared_task
+
+
 def check_overdue_items():
     """
     Check for overdue items and create notifications
@@ -148,6 +155,8 @@ def check_overdue_items():
     return f"Created {created_count} overdue notifications"
 
 @shared_task
+
+
 def check_expiring_holds():
     """
     Check for holds expiring soon and create notifications

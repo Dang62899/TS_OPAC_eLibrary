@@ -1,5 +1,6 @@
 from circulation.models import Notification
 
+
 def unread_notifications(request):
     """
     Add unread notification count to template context

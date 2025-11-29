@@ -1,5 +1,6 @@
 from django.conf import settings
 
+
 def feature_flags(request):
     """Expose runtime feature flags to templates.
 

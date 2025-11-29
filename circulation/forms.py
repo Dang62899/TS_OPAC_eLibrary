@@ -6,6 +6,7 @@ from django.db.models import F, Value
 from django.db.models.functions import Replace
 from accounts.models import User
 
+
 class CheckoutForm(forms.ModelForm):
     """Form for checking out items"""
     # Field accepts ISBN (preferred) or item barcode as fallback
@@ -76,6 +77,7 @@ class CheckoutForm(forms.ModelForm):
         except User.DoesNotExist:
             raise forms.ValidationError("Borrower not found.")
 
+
 class CheckinForm(forms.Form):
     """Form for checking in items"""
     # Field accepts ISBN (preferred) or item barcode as fallback
@@ -117,9 +119,11 @@ class CheckinForm(forms.Form):
                     raise forms.ValidationError("No active loan found for this item.")
         raise forms.ValidationError("Please enter an ISBN or Item ID.")
 
+
 class RenewalForm(forms.Form):
     """Form for renewing loans"""
     loan_id = forms.IntegerField(widget=forms.HiddenInput())
+
 
 class HoldForm(forms.ModelForm):
     """Form for placing holds"""
@@ -129,6 +133,7 @@ class HoldForm(forms.ModelForm):
         widgets = {
             'pickup_location': forms.Select(attrs={'class': 'form-control'}),
         }
+
 
 class InTransitForm(forms.ModelForm):
     """Form for sending items in transit"""
@@ -175,6 +180,7 @@ class InTransitForm(forms.ModelForm):
                 return identifier
             except Item.DoesNotExist:
                 raise forms.ValidationError("Item not found with this ISBN/ID.")
+
 
 class BorrowerSearchForm(forms.Form):
     """Form for searching borrowers"""

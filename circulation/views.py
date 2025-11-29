@@ -20,12 +20,15 @@ from django.db.models.functions import Replace
 from catalog.models import Item, Publication, Location
 from accounts.models import User
 
+
 def is_staff_user(user):
     """Check if user is staff"""
     return user.is_authenticated and user.user_type in ['staff', 'admin']
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def circulation_dashboard(request):
     """Staff circulation dashboard"""
     today = timezone.now().date()
@@ -63,6 +66,8 @@ def circulation_dashboard(request):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def checkout(request):
     """Check out an item to a borrower"""
     if request.method == 'POST':
@@ -98,6 +103,8 @@ def checkout(request):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def checkin(request):
     """Check in a returned item"""
     if request.method == 'POST':
@@ -164,6 +171,8 @@ def checkin(request):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def renew_loan(request, loan_id):
     """Renew a loan (staff interface)"""
     loan = get_object_or_404(Loan, pk=loan_id)
@@ -181,6 +190,8 @@ def renew_loan(request, loan_id):
     return redirect('circulation:borrower_detail', user_id=loan.borrower.id)
 
 @login_required
+
+
 def renew_loan_online(request, loan_id):
     """Renew a loan (borrower interface)"""
     loan = get_object_or_404(Loan, pk=loan_id, borrower=request.user)
@@ -207,6 +218,8 @@ def renew_loan_online(request, loan_id):
     return redirect('accounts:my_account')
 
 @login_required
+
+
 def place_hold(request, publication_id):
     """Place a hold on a publication"""
     publication = get_object_or_404(Publication, pk=publication_id)
@@ -253,6 +266,8 @@ def place_hold(request, publication_id):
     return render(request, 'circulation/place_hold.html', context)
 
 @login_required
+
+
 def cancel_hold(request, hold_id):
     """Cancel a hold"""
     hold = get_object_or_404(Hold, pk=hold_id, borrower=request.user)
@@ -279,6 +294,8 @@ def cancel_hold(request, hold_id):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def manage_holds(request):
     """Manage hold requests"""
     waiting_holds = Hold.objects.filter(status='waiting').select_related(
@@ -297,6 +314,8 @@ def manage_holds(request):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def set_hold_ready(request, hold_id):
     """Mark a hold as ready for pickup - only if an item is available"""
     hold = get_object_or_404(Hold, pk=hold_id)
@@ -347,6 +366,8 @@ def set_hold_ready(request, hold_id):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def complete_hold(request, hold_id):
     """Complete a hold by checking out the item to the borrower"""
     hold = get_object_or_404(Hold, pk=hold_id)
@@ -441,6 +462,8 @@ def complete_hold(request, hold_id):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def borrower_list(request):
     """List all borrowers"""
     form = BorrowerSearchForm(request.GET or None)
@@ -474,6 +497,8 @@ def borrower_list(request):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def borrower_detail(request, user_id):
     """View borrower details and activity"""
     borrower = get_object_or_404(User, pk=user_id, user_type='borrower')
@@ -502,6 +527,8 @@ def borrower_detail(request, user_id):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def block_borrower(request, user_id):
     """Block a borrower"""
     borrower = get_object_or_404(User, pk=user_id, user_type='borrower')
@@ -518,6 +545,8 @@ def block_borrower(request, user_id):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def unblock_borrower(request, user_id):
     """Unblock a borrower"""
     borrower = get_object_or_404(User, pk=user_id, user_type='borrower')
@@ -531,6 +560,8 @@ def unblock_borrower(request, user_id):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def send_in_transit(request):
     """Send an item in transit"""
     if request.method == 'POST':
@@ -553,6 +584,8 @@ def send_in_transit(request):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def receive_in_transit(request):
     """Receive items in transit"""
     if request.method == 'POST':
@@ -609,6 +642,8 @@ def receive_in_transit(request):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def transit_list(request):
     """List all transit records"""
     transits = InTransit.objects.all().select_related(
@@ -619,12 +654,16 @@ def transit_list(request):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def reports(request):
     """Reports dashboard"""
     return render(request, 'circulation/reports.html')
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def overdue_report(request):
     """Report of overdue items"""
     today = timezone.now().date()
@@ -641,6 +680,8 @@ def overdue_report(request):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def circulation_stats(request):
     """Circulation statistics report"""
     today = timezone.now().date()
@@ -690,6 +731,8 @@ def circulation_stats(request):
     return render(request, 'circulation/circulation_stats.html', context)
 
 @login_required
+
+
 def notifications_list(request):
     """List all notifications for current user"""
     notifications = Notification.objects.filter(
@@ -709,6 +752,8 @@ def notifications_list(request):
     return render(request, 'circulation/notifications_list.html', context)
 
 @login_required
+
+
 def mark_notification_read(request, notification_id):
     """Mark a single notification as read"""
     notification = get_object_or_404(Notification, id=notification_id, borrower=request.user)
@@ -719,6 +764,8 @@ def mark_notification_read(request, notification_id):
     return redirect(next_url)
 
 @login_required
+
+
 def mark_all_notifications_read(request):
     """Mark all notifications as read for current user"""
     if request.method == 'POST':
@@ -731,6 +778,8 @@ def mark_all_notifications_read(request):
     return redirect('circulation:notifications_list')
 
 @login_required
+
+
 def delete_notification(request, notification_id):
     """Delete a notification"""
     notification = get_object_or_404(Notification, id=notification_id, borrower=request.user)
@@ -741,6 +790,7 @@ def delete_notification(request, notification_id):
         return redirect('circulation:notifications_list')
 
     return render(request, 'circulation/delete_notification.html', {'notification': notification})
+
 
 def create_notification(borrower, notification_type, title, message, loan=None, hold=None, action_url=''):
     """
@@ -760,6 +810,8 @@ def create_notification(borrower, notification_type, title, message, loan=None, 
 
 # Checkout Request Views
 @login_required
+
+
 def request_checkout(request, publication_id):
     """Borrower requests to checkout a book"""
     publication = get_object_or_404(Publication, pk=publication_id)
@@ -810,6 +862,8 @@ def request_checkout(request, publication_id):
     return render(request, 'circulation/request_checkout.html', context)
 
 @login_required
+
+
 def cancel_checkout_request(request, request_id):
     """Cancel a pending checkout request"""
     checkout_request = get_object_or_404(CheckoutRequest, pk=request_id, borrower=request.user)
@@ -838,6 +892,8 @@ def cancel_checkout_request(request, request_id):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def manage_checkout_requests(request):
     """Staff view to manage checkout requests"""
     status_filter = request.GET.get('status', 'pending')
@@ -859,6 +915,8 @@ def manage_checkout_requests(request):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def approve_checkout_request(request, request_id):
     """Staff approves checkout request"""
     checkout_request = get_object_or_404(CheckoutRequest, pk=request_id)
@@ -924,6 +982,8 @@ def approve_checkout_request(request, request_id):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def deny_checkout_request(request, request_id):
     """Staff denies checkout request"""
     checkout_request = get_object_or_404(CheckoutRequest, pk=request_id)
@@ -957,6 +1017,8 @@ def deny_checkout_request(request, request_id):
 
 @login_required
 @user_passes_test(is_staff_user)
+
+
 def complete_checkout_request(request, request_id):
     """Staff completes checkout request by checking out the item to borrower"""
     checkout_request = get_object_or_404(CheckoutRequest, pk=request_id)

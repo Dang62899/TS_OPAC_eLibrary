@@ -2,6 +2,8 @@ from django.contrib import admin
 from .models import Loan, Hold, InTransit, Notification, CheckoutRequest
 
 @admin.register(Loan)
+
+
 class LoanAdmin(admin.ModelAdmin):
     list_display = ['item', 'borrower', 'checkout_date', 'due_date', 'return_date', 'status', 'renewal_count']
     list_filter = ['status', 'checkout_date', 'due_date']
@@ -24,6 +26,8 @@ class LoanAdmin(admin.ModelAdmin):
     )
 
 @admin.register(Hold)
+
+
 class HoldAdmin(admin.ModelAdmin):
     list_display = ['publication', 'borrower', 'hold_date', 'status', 'queue_position', 'pickup_location']
     list_filter = ['status', 'hold_date', 'pickup_location']
@@ -31,6 +35,8 @@ class HoldAdmin(admin.ModelAdmin):
     readonly_fields = ['hold_date', 'ready_date']
 
 @admin.register(InTransit)
+
+
 class InTransitAdmin(admin.ModelAdmin):
     list_display = ['item', 'from_location', 'to_location', 'send_date', 'receive_date', 'status']
     list_filter = ['status', 'from_location', 'to_location']
@@ -38,6 +44,8 @@ class InTransitAdmin(admin.ModelAdmin):
     readonly_fields = ['send_date']
 
 @admin.register(Notification)
+
+
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ['borrower', 'notification_type', 'title', 'created_date', 'is_read', 'email_sent']
     list_filter = ['notification_type', 'is_read', 'email_sent', 'created_date']
@@ -60,6 +68,8 @@ class NotificationAdmin(admin.ModelAdmin):
     )
 
 @admin.register(CheckoutRequest)
+
+
 class CheckoutRequestAdmin(admin.ModelAdmin):
     list_display = ['publication', 'borrower', 'request_date', 'status', 'reviewed_by', 'pickup_location']
     list_filter = ['status', 'request_date', 'pickup_location']

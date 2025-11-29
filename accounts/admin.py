@@ -3,6 +3,8 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User
 
 @admin.register(User)
+
+
 class UserAdmin(BaseUserAdmin):
     list_display = ['username', 'email', 'first_name', 'last_name', 'user_type', 'is_blocked', 'library_card_number']
     list_filter = ['user_type', 'is_blocked', 'is_staff', 'is_active']
