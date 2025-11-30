@@ -23,13 +23,13 @@
 - ✅ `runtime.txt` - Python version
 - ✅ `production_settings.py` - Production security settings
 
-### Documentation
-- ✅ `START_HERE.md` - **Read this first!**
-- ✅ `README.md` - Complete project documentation
-- ✅ `DEPLOYMENT.md` - Production deployment guide (comprehensive)
-- ✅ `QUICKSTART.md` - Quick start guide
-- ✅ `TESTING_CHECKLIST.md` - Testing procedures
-- ✅ User guides and admin documentation
+### Documentation (in `docs/` folder)
+- ✅ `docs/START_HERE.md` - **Read this first!**
+- ✅ `docs/README.md` - Complete project documentation
+- ✅ `docs/deployment/DEPLOYMENT.md` - Production deployment guide (comprehensive)
+- ✅ `docs/QUICKSTART.md` - Quick start guide
+- ✅ `docs/TESTING_CHECKLIST.md` - Testing procedures
+- ✅ `docs/guides/` - User guides and admin documentation
 
 ### Scripts
 - ✅ `setup.bat` / `setup.sh` - Development setup
@@ -371,6 +371,6 @@ Built with:
 ---
 
 **This package is ready for deployment!**  
-Start with `START_HERE.md` or `DEPLOYMENT.md`
+Start with `docs/START_HERE.md` or `docs/deployment/DEPLOYMENT.md`
 
 Good luck with your deployment! 🚀

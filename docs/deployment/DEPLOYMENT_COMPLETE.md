@@ -71,7 +71,7 @@ System check identified no issues (0 silenced).
 
 ### 4. Comprehensive Documentation
 
-#### Deployment Guides (2,500+ lines)
+#### Deployment Guides (in `docs/deployment/`)
 1. **DEPLOYMENT_README.md** (Quick start navigation)
 2. **DEPLOYMENT_GUIDE.md** (750+ lines)
    - Docker Compose method (fastest)
@@ -89,7 +89,7 @@ System check identified no issues (0 silenced).
    - Post-deployment verification
    - Sign-off section
 
-4. **SECURITY_HARDENING.md** (360+ lines)
+4. **SECURITY_HARDENING.md** (in `docs/guides/`) (360+ lines)
    - Current security status
    - 7-step deployment procedure
    - Environment variable guide
