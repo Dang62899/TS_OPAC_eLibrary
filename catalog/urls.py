@@ -6,6 +6,7 @@ app_name = "catalog"
 urlpatterns = [
     path("", views.index, name="index"),
     path("search/", views.search, name="search"),
+    path("search-suggestions/", views.search_suggestions, name="search_suggestions"),
     path("publication/<int:pk>/", views.publication_detail, name="publication_detail"),
     path("browse/type/<int:type_id>/", views.browse_by_type, name="browse_by_type"),
     path("browse/subject/<int:subject_id>/", views.browse_by_subject, name="browse_by_subject"),

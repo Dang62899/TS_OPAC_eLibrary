@@ -266,3 +266,37 @@ def add_items(request, pk):
         form = ItemForm()
 
     return render(request, "catalog/add_items.html", {"form": form, "publication": publication, "items": items})
+
+
+# API Endpoints for AJAX functionality
+from django.http import JsonResponse
+
+
+def search_suggestions(request):
+    """API endpoint for autocomplete suggestions in search box"""
+    query = request.GET.get('q', '').strip()
+    
+    if not query or len(query) < 2:
+        return JsonResponse({'suggestions': []})
+    
+    # Get unique publication titles matching the query
+    titles = Publication.objects.filter(
+        title__icontains=query
+    ).values_list('title', flat=True).distinct()[:10]
+    
+    # Get author names matching the query
+    from accounts.models import Author
+    authors = Author.objects.filter(
+        Q(first_name__icontains=query) | Q(last_name__icontains=query)
+    ).values_list('get_full_name', flat=True).distinct()[:5]
+    
+    # Get subjects matching the query
+    subjects = Subject.objects.filter(
+        name__icontains=query
+    ).values_list('name', flat=True).distinct()[:5]
+    
+    # Combine and limit suggestions
+    suggestions = list(titles) + list(authors) + list(subjects)
+    suggestions = list(set(suggestions))[:15]  # Remove duplicates and limit to 15
+    
+    return JsonResponse({'suggestions': sorted(suggestions)})
