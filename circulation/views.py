@@ -87,6 +87,7 @@ def staff_dashboard(request):
     holds_ready = Hold.objects.filter(status="ready").count()
     items_in_transit = InTransit.objects.filter(status="in_transit").count()
     pending_requests = CheckoutRequest.objects.filter(status="pending").count()
+    total_users = User.objects.count()
 
     # Recent activity
     recent_checkouts = Loan.objects.filter(checkout_date__gte=timezone.now() - timedelta(days=1)).select_related(
@@ -97,6 +98,16 @@ def staff_dashboard(request):
         return_date__gte=timezone.now() - timedelta(days=1), status__in=["returned", "overdue_returned"]
     ).select_related("item__publication", "borrower")[:10]
 
+    # Prepare data for Chart.js (last 7 days)
+    daily_checkouts = []
+    daily_returns = []
+    for i in range(6, -1, -1):
+        date = today - timedelta(days=i)
+        checkouts = Loan.objects.filter(checkout_date__date=date).count()
+        returns = Loan.objects.filter(return_date__date=date).count()
+        daily_checkouts.append(checkouts)
+        daily_returns.append(returns)
+
     context = {
         "active_loans": active_loans,
         "overdue_loans": overdue_loans,
@@ -104,10 +115,13 @@ def staff_dashboard(request):
         "holds_ready": holds_ready,
         "items_in_transit": items_in_transit,
         "pending_requests": pending_requests,
+        "total_users": total_users,
         "recent_checkouts": recent_checkouts,
         "recent_returns": recent_returns,
+        "daily_checkouts": daily_checkouts,
+        "daily_returns": daily_returns,
     }
-    return render(request, "circulation/staff_dashboard.html", context)
+    return render(request, "circulation/dashboard.html", context)
 
 
 @login_required
