@@ -14,7 +14,7 @@
                     {% csrf_token %}
                     {{ form|crispy }}
                     <button type="submit" class="btn btn-success">Check In</button>
-                    <a href="{% url 'circulation:dashboard' %}" class="btn btn-secondary">Cancel</a>
+                    <a href="{% url 'circulation:staff_dashboard' %}" class="btn btn-secondary">Cancel</a>
                 </form>
             </div>
         </div>

@@ -26,10 +26,58 @@ def is_staff_user(user):
     return user.is_authenticated and user.user_type in ["staff", "admin"]
 
 
+def is_admin_user(user):
+    """Check if user is admin"""
+    return user.is_authenticated and user.user_type == "admin"
+
+
+@login_required
+@user_passes_test(is_admin_user)
+def admin_dashboard(request):
+    """Admin dashboard with system-wide controls and statistics"""
+    today = timezone.now().date()
+
+    # User Statistics
+    total_users = User.objects.count()
+    active_borrowers = User.objects.filter(user_type="borrower").count()
+    staff_count = User.objects.filter(user_type="staff").count()
+    blocked_borrowers = User.objects.filter(is_blocked=True).count()
+
+    # Publication/Item Statistics
+    total_publications = Publication.objects.count()
+    total_items = Item.objects.count()
+    available_items = Item.objects.filter(status="available").count()
+    items_on_loan = Item.objects.filter(status="on_loan").count()
+    items_on_hold = Item.objects.filter(status="on_hold_shelf").count()
+    items_in_transit = Item.objects.filter(status="in_transit").count()
+
+    # Circulation Statistics
+    active_loans = Loan.objects.filter(status="active").count()
+    overdue_loans = Loan.objects.filter(status="active", due_date__lt=today).count()
+    pending_holds = Hold.objects.filter(status="waiting").count()
+
+    context = {
+        "total_users": total_users,
+        "active_borrowers": active_borrowers,
+        "staff_count": staff_count,
+        "blocked_borrowers": blocked_borrowers,
+        "total_publications": total_publications,
+        "total_items": total_items,
+        "available_items": available_items,
+        "items_on_loan": items_on_loan,
+        "items_on_hold": items_on_hold,
+        "items_in_transit": items_in_transit,
+        "active_loans": active_loans,
+        "overdue_loans": overdue_loans,
+        "pending_holds": pending_holds,
+    }
+    return render(request, "circulation/admin_dashboard.html", context)
+
+
 @login_required
 @user_passes_test(is_staff_user)
-def circulation_dashboard(request):
-    """Staff circulation dashboard"""
+def staff_dashboard(request):
+    """Staff dashboard with circulation operations (no system administration)"""
     today = timezone.now().date()
 
     # Statistics
@@ -38,6 +86,7 @@ def circulation_dashboard(request):
     holds_waiting = Hold.objects.filter(status="waiting").count()
     holds_ready = Hold.objects.filter(status="ready").count()
     items_in_transit = InTransit.objects.filter(status="in_transit").count()
+    pending_requests = CheckoutRequest.objects.filter(status="pending").count()
 
     # Recent activity
     recent_checkouts = Loan.objects.filter(checkout_date__gte=timezone.now() - timedelta(days=1)).select_related(
@@ -54,10 +103,11 @@ def circulation_dashboard(request):
         "holds_waiting": holds_waiting,
         "holds_ready": holds_ready,
         "items_in_transit": items_in_transit,
+        "pending_requests": pending_requests,
         "recent_checkouts": recent_checkouts,
         "recent_returns": recent_returns,
     }
-    return render(request, "circulation/dashboard.html", context)
+    return render(request, "circulation/staff_dashboard.html", context)
 
 
 @login_required

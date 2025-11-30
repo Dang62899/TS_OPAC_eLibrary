@@ -14,9 +14,11 @@ from .models import User
 def custom_login(request):
     """Custom login view that redirects based on user type"""
     if request.user.is_authenticated:
-        # Already logged in, redirect to appropriate page
-        if request.user.user_type == "admin" or request.user.user_type == "staff":
-            return redirect("circulation:dashboard")
+        # Already logged in, redirect to appropriate page based on user type
+        if request.user.user_type == "admin":
+            return redirect("circulation:admin_dashboard")
+        elif request.user.user_type == "staff":
+            return redirect("circulation:staff_dashboard")
         else:
             return redirect("accounts:my_account")
 
@@ -33,8 +35,10 @@ def custom_login(request):
                 return redirect(next_url)
 
             # Redirect based on user type
-            if user.user_type == "admin" or user.user_type == "staff":
-                return redirect("circulation:dashboard")
+            if user.user_type == "admin":
+                return redirect("circulation:admin_dashboard")
+            elif user.user_type == "staff":
+                return redirect("circulation:staff_dashboard")
             else:
                 return redirect("accounts:my_account")
         else:

@@ -29,7 +29,7 @@
                     </li>
                     {% if user.is_authenticated and user.user_type in 'staff,admin' %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'circulation:dashboard' %}">Circulation</a>
+                        <a class="nav-link" href="{% url 'circulation:staff_dashboard' %}">Circulation</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'circulation:manage_checkout_requests' %}">Checkout Requests</a>

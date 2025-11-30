@@ -23,14 +23,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY: load sensitive settings from environment in production
 SECRET_KEY = os.environ.get("ELIBRARY_SECRET_KEY", "django-insecure-your-secret-key-here-change-in-production")
 
-# DEBUG controlled by env var. Default False to be safe in deployed envs.
-DEBUG = os.environ.get("ELIBRARY_DEBUG", "False") == "True"
+# DEBUG controlled by env var. Default True for development, False for production
+DEBUG = os.environ.get("ELIBRARY_DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = []
 # Allow configuring allowed hosts via environment variable (comma-separated)
 env_allowed = os.environ.get("ELIBRARY_ALLOWED_HOSTS", "")
 if env_allowed:
     ALLOWED_HOSTS = [h.strip() for h in env_allowed.split(",") if h.strip()]
+else:
+    # In development (DEBUG=True), allow localhost by default
+    if DEBUG:
+        ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]"]
+    else:
+        # Production: must set ELIBRARY_ALLOWED_HOSTS
+        ALLOWED_HOSTS = []
 
 # Determine production mode: explicit env var only
 # Set `ELIBRARY_PRODUCTION=True` in the environment when running in production.

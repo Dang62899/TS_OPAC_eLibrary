@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - e-Library{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">
+        <i class="fas fa-shield-alt"></i> Administrator Dashboard
+    </h1>
+
+    <!-- System Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ total_users }}</h3>
+                    <p class="text-muted mb-0">Total Users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ active_borrowers }}</h3>
+                    <p class="text-muted mb-0">Active Borrowers</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ total_publications }}</h3>
+                    <p class="text-muted mb-0">Publications</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ total_items }}</h3>
+                    <p class="text-muted mb-0">Total Items</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Status -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-heartbeat"></i> System Status</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>Active Loans:</strong></td>
+                            <td>{{ active_loans }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Overdue Items:</strong></td>
+                            <td><span class="badge badge-danger">{{ overdue_loans }}</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Blocked Borrowers:</strong></td>
+                            <td><span class="badge badge-warning">{{ blocked_borrowers }}</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Pending Holds:</strong></td>
+                            <td>{{ pending_holds }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-book"></i> Collection Status</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>Available Items:</strong></td>
+                            <td>{{ available_items }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Items on Loan:</strong></td>
+                            <td>{{ items_on_loan }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Items on Hold Shelf:</strong></td>
+                            <td>{{ items_on_hold }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Items in Transit:</strong></td>
+                            <td>{{ items_in_transit }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Control Panels -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-users-cog"></i> User Management</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Manage all system users and their roles</p>
+                    <a href="{% url 'accounts:manage_users' %}" class="btn btn-danger btn-block">
+                        <i class="fas fa-list"></i> View All Users
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0"><i class="fas fa-cogs"></i> System Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Configure library settings and policies</p>
+                    <button class="btn btn-warning btn-block" disabled>
+                        <i class="fas fa-sliders-h"></i> Settings (Coming Soon)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-file-alt"></i> System Reports</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">View detailed system and circulation reports</p>
+                    <a href="{% url 'circulation:reports' %}" class="btn btn-info btn-block">
+                        <i class="fas fa-chart-bar"></i> View Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Staff Management & Quick Access -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-users"></i> Staff Management</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">{{ staff_count }} staff members in system</p>
+                    <div class="btn-group-vertical btn-block">
+                        <a href="{% url 'accounts:manage_users' %}?user_type=staff" class="btn btn-outline-secondary text-left">
+                            <i class="fas fa-list"></i> View All Staff
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-fast-forward"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group-vertical btn-block">
+                        <a href="{% url 'circulation:checkout' %}" class="btn btn-outline-primary text-left">
+                            <i class="fas fa-check"></i> Staff: Check Out Items
+                        </a>
+                        <a href="{% url 'circulation:checkin' %}" class="btn btn-outline-success text-left">
+                            <i class="fas fa-undo"></i> Staff: Check In Items
+                        </a>
+                        <a href="{% url 'circulation:borrower_list' %}" class="btn btn-outline-info text-left">
+                            <i class="fas fa-address-book"></i> Staff: Borrower List
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Administrative Notes -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-info-circle"></i> <strong>Administrator Panel:</strong>
+                As an administrator, you have full access to system configuration, user management, and all staff functions. 
+                Use the controls above to manage the library system.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

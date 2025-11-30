@@ -4,8 +4,9 @@ from . import views
 app_name = "circulation"
 
 urlpatterns = [
-    # Staff dashboard
-    path("", views.circulation_dashboard, name="dashboard"),
+    # Dashboards - Role-based
+    path("admin-dashboard/", views.admin_dashboard, name="admin_dashboard"),
+    path("staff-dashboard/", views.staff_dashboard, name="staff_dashboard"),
     # Checkout/Checkin
     path("checkout/", views.checkout, name="checkout"),
     path("checkin/", views.checkin, name="checkin"),

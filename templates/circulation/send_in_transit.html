@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Send Item in Transit - e-Library{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1><i class="fas fa-arrow-right"></i> Send Item in Transit</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Select Item and Destination</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <div class="form-group mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check"></i> Send in Transit
+                            </button>
+                            <a href="{% url 'circulation:staff_dashboard' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Help</h5>
+                </div>
+                <div class="card-body small">
+                    <p>Use this form to mark items that are being shipped to another location.</p>
+                    <p>Once items reach their destination, use the "Receive in Transit" function to confirm receipt.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
