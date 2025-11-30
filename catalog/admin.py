@@ -7,6 +7,10 @@ from .models import (
     Location,
     Publication,
     Item,
+    Rating,
+    Review,
+    Wishlist,
+    ReadingProgress,
 )
 
 
@@ -69,3 +73,40 @@ class ItemAdmin(admin.ModelAdmin):
     list_filter = ["status", "location"]
     search_fields = ["barcode", "publication__title"]
     readonly_fields = ["times_borrowed", "last_borrowed_date"]
+
+
+@admin.register(Rating)
+class RatingAdmin(admin.ModelAdmin):
+    list_display = ["user", "publication", "rating", "date_added"]
+    list_filter = ["rating", "date_added"]
+    search_fields = ["user__username", "publication__title"]
+    readonly_fields = ["date_added", "date_updated"]
+
+
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ["user", "publication", "title", "rating", "helpful_count", "is_verified"]
+    list_filter = ["rating", "is_verified", "date_added"]
+    search_fields = ["user__username", "publication__title", "title", "content"]
+    readonly_fields = ["date_added", "date_updated"]
+
+
+@admin.register(Wishlist)
+class WishlistAdmin(admin.ModelAdmin):
+    list_display = ["user", "get_publication_count", "date_created"]
+    search_fields = ["user__username"]
+    filter_horizontal = ["publications"]
+    readonly_fields = ["date_created"]
+
+    def get_publication_count(self, obj):
+        return obj.publications.count()
+    get_publication_count.short_description = "Publications"
+
+
+@admin.register(ReadingProgress)
+class ReadingProgressAdmin(admin.ModelAdmin):
+    list_display = ["user", "publication", "status", "percentage_complete", "date_updated"]
+    list_filter = ["status", "date_updated"]
+    search_fields = ["user__username", "publication__title"]
+    readonly_fields = ["date_added", "date_updated", "percentage_complete"]
+

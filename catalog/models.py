@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils import timezone
 from django.urls import reverse
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.conf import settings
 
 
 class PublicationType(models.Model):
@@ -137,6 +139,20 @@ class Publication(models.Model):
         """Check if any copy is available"""
         return self.get_available_copies_count() > 0
 
+    def get_average_rating(self):
+        """Get average rating for this publication"""
+        from django.db.models import Avg
+        result = self.ratings.aggregate(avg=Avg('rating'))
+        return round(result['avg'] or 0, 1)
+
+    def get_rating_count(self):
+        """Get total number of ratings for this publication"""
+        return self.ratings.count()
+
+    def get_review_count(self):
+        """Get total number of reviews for this publication"""
+        return self.reviews.count()
+
 
 class Item(models.Model):
     """Physical or digital copy of a publication"""
@@ -192,3 +208,158 @@ class Item(models.Model):
     def is_available_for_loan(self):
         """Check if item can be loaned"""
         return self.status == "available"
+
+
+class Rating(models.Model):
+    """User ratings for publications (1-5 stars)"""
+
+    RATING_CHOICES = [
+        (1, '1 Star'),
+        (2, '2 Stars'),
+        (3, '3 Stars'),
+        (4, '4 Stars'),
+        (5, '5 Stars'),
+    ]
+
+    publication = models.ForeignKey(Publication, on_delete=models.CASCADE, related_name="ratings")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="publication_ratings")
+    rating = models.IntegerField(choices=RATING_CHOICES, validators=[MinValueValidator(1), MaxValueValidator(5)])
+    date_added = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('publication', 'user')
+        ordering = ['-date_added']
+        indexes = [
+            models.Index(fields=['publication', 'user']),
+            models.Index(fields=['publication']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.publication.title}: {self.rating} stars"
+
+    @staticmethod
+    def get_average_rating(publication):
+        """Get average rating for a publication"""
+        from django.db.models import Avg
+        result = Rating.objects.filter(publication=publication).aggregate(avg=Avg('rating'))
+        return result['avg'] or 0
+
+    @staticmethod
+    def get_rating_count(publication):
+        """Get total number of ratings for a publication"""
+        return Rating.objects.filter(publication=publication).count()
+
+
+class Review(models.Model):
+    """User reviews for publications"""
+
+    publication = models.ForeignKey(Publication, on_delete=models.CASCADE, related_name="reviews")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="publication_reviews")
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    rating = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        help_text="Rating from 1 to 5 stars"
+    )
+    helpful_count = models.IntegerField(default=0)
+    date_added = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+    is_verified = models.BooleanField(default=False, help_text="Verified if user has borrowed this item")
+
+    class Meta:
+        ordering = ['-date_added']
+        indexes = [
+            models.Index(fields=['publication']),
+            models.Index(fields=['user']),
+            models.Index(fields=['-helpful_count']),
+        ]
+
+    def __str__(self):
+        return f"Review by {self.user.username} on {self.publication.title}"
+
+    @staticmethod
+    def get_verified_reviews(publication):
+        """Get verified reviews (from users who have borrowed the item)"""
+        return Review.objects.filter(publication=publication, is_verified=True).order_by('-helpful_count', '-date_added')
+
+    @staticmethod
+    def get_recent_reviews(publication, limit=5):
+        """Get recent reviews for a publication"""
+        return Review.objects.filter(publication=publication).order_by('-date_added')[:limit]
+
+
+class Wishlist(models.Model):
+    """User's reading wishlist"""
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="publication_wishlist")
+    publications = models.ManyToManyField(Publication, related_name="wishlisted_by")
+    date_created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date_created']
+
+    def __str__(self):
+        return f"{self.user.username}'s Wishlist"
+
+    def add_publication(self, publication):
+        """Add a publication to wishlist"""
+        self.publications.add(publication)
+
+    def remove_publication(self, publication):
+        """Remove a publication from wishlist"""
+        self.publications.remove(publication)
+
+    def is_in_wishlist(self, publication):
+        """Check if publication is in wishlist"""
+        return self.publications.filter(id=publication.id).exists()
+
+
+class ReadingProgress(models.Model):
+    """Track user's reading progress for publications"""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reading_progress")
+    publication = models.ForeignKey(Publication, on_delete=models.CASCADE, related_name="reading_progress")
+    
+    PROGRESS_STATUS = [
+        ('not_started', 'Not Started'),
+        ('reading', 'Currently Reading'),
+        ('completed', 'Completed'),
+        ('abandoned', 'Abandoned'),
+    ]
+    
+    status = models.CharField(max_length=20, choices=PROGRESS_STATUS, default='not_started')
+    pages_read = models.IntegerField(default=0)
+    total_pages = models.IntegerField(default=0)
+    percentage_complete = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    
+    start_date = models.DateField(null=True, blank=True)
+    completion_date = models.DateField(null=True, blank=True)
+    date_added = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'publication')
+        ordering = ['-date_updated']
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['user']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.publication.title}: {self.percentage_complete}%"
+
+    def update_progress(self, pages_read, total_pages):
+        """Update reading progress"""
+        self.pages_read = pages_read
+        self.total_pages = total_pages
+        if total_pages > 0:
+            self.percentage_complete = int((pages_read / total_pages) * 100)
+        if self.percentage_complete >= 100 and self.status != 'completed':
+            self.status = 'completed'
+            self.completion_date = timezone.now().date()
+        self.save()
+
+    def get_progress_percentage(self):
+        """Get reading progress as percentage"""
+        return self.percentage_complete

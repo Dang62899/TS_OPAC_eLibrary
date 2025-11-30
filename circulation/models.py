@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
+from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import timedelta
 from catalog.models import Item, Publication
 
@@ -320,3 +321,310 @@ class CheckoutRequest(models.Model):
         # Check if there's an available copy
         available_items = self.publication.items.filter(status="available")
         return available_items.exists()
+
+
+class NotificationPreference(models.Model):
+    """User notification preferences"""
+
+    NOTIFICATION_CHANNELS = [
+        ('in_app', 'In-App Notification'),
+        ('email', 'Email'),
+        ('both', 'Both'),
+    ]
+
+    borrower = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notification_preferences")
+    
+    # Individual preference toggles
+    checkout_notification = models.BooleanField(default=True)
+    checkin_notification = models.BooleanField(default=True)
+    due_soon_notification = models.BooleanField(default=True)
+    overdue_notification = models.BooleanField(default=True)
+    hold_ready_notification = models.BooleanField(default=True)
+    hold_placed_notification = models.BooleanField(default=False)
+    hold_expiring_notification = models.BooleanField(default=True)
+    renewal_notification = models.BooleanField(default=False)
+    fine_notification = models.BooleanField(default=True)
+    
+    # Channel preference
+    default_channel = models.CharField(max_length=10, choices=NOTIFICATION_CHANNELS, default='both')
+    
+    # Sound alert settings
+    enable_sound_alerts = models.BooleanField(default=True)
+    sound_volume = models.IntegerField(default=70, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    
+    # Email digest
+    enable_email_digest = models.BooleanField(default=True)
+    email_digest_frequency = models.CharField(
+        max_length=10,
+        choices=[
+            ('daily', 'Daily'),
+            ('weekly', 'Weekly'),
+            ('never', 'Never'),
+        ],
+        default='weekly'
+    )
+    last_digest_sent = models.DateTimeField(null=True, blank=True)
+    
+    # Quiet hours
+    quiet_hours_enabled = models.BooleanField(default=False)
+    quiet_hours_start = models.TimeField(null=True, blank=True)
+    quiet_hours_end = models.TimeField(null=True, blank=True)
+    
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "Notification Preferences"
+
+    def __str__(self):
+        return f"Notification Preferences - {self.borrower.username}"
+
+    @staticmethod
+    def get_or_create_for_user(user):
+        """Get or create notification preferences for a user"""
+        prefs, created = NotificationPreference.objects.get_or_create(borrower=user)
+        return prefs
+
+    def is_in_quiet_hours(self):
+        """Check if current time is within quiet hours"""
+        if not self.quiet_hours_enabled:
+            return False
+        
+        now = timezone.now().time()
+        if self.quiet_hours_start and self.quiet_hours_end:
+            return self.quiet_hours_start <= now <= self.quiet_hours_end
+        return False
+
+    def should_notify_for_type(self, notification_type):
+        """Check if user wants notifications for this type"""
+        type_field = f'{notification_type}_notification'
+        return getattr(self, type_field, False)
+
+
+class NotificationArchive(models.Model):
+    """Archive of old/deleted notifications"""
+
+    borrower = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notification_archives")
+    notification_type = models.CharField(max_length=20)
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    created_date = models.DateTimeField()
+    archived_date = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-archived_date']
+        indexes = [
+            models.Index(fields=['borrower', 'archived_date']),
+        ]
+
+    def __str__(self):
+        return f"{self.title} - {self.borrower}"
+
+
+class ActivityLog(models.Model):
+    """System activity log for monitoring and audit trail"""
+
+    ACTION_TYPES = [
+        ('login', 'User Login'),
+        ('logout', 'User Logout'),
+        ('checkout', 'Item Checkout'),
+        ('checkin', 'Item Check-in'),
+        ('renewal', 'Item Renewal'),
+        ('hold_placed', 'Hold Placed'),
+        ('hold_ready', 'Hold Ready'),
+        ('publication_created', 'Publication Created'),
+        ('publication_updated', 'Publication Updated'),
+        ('publication_deleted', 'Publication Deleted'),
+        ('user_created', 'User Created'),
+        ('user_updated', 'User Updated'),
+        ('user_deleted', 'User Deleted'),
+        ('fine_added', 'Fine Added'),
+        ('fine_waived', 'Fine Waived'),
+        ('report_generated', 'Report Generated'),
+        ('backup', 'Backup Created'),
+        ('system_error', 'System Error'),
+        ('permission_change', 'Permission Changed'),
+        ('other', 'Other'),
+    ]
+
+    action = models.CharField(max_length=20, choices=ACTION_TYPES)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="activity_logs")
+    description = models.TextField()
+    
+    # Related object info
+    content_type = models.CharField(max_length=100, blank=True, help_text="Model name (e.g., 'catalog.Publication')")
+    object_id = models.IntegerField(null=True, blank=True)
+    object_repr = models.CharField(max_length=200, blank=True)
+    
+    # System info
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    # Status
+    success = models.BooleanField(default=True)
+    error_message = models.TextField(blank=True)
+    
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['user', 'timestamp']),
+            models.Index(fields=['action', 'timestamp']),
+            models.Index(fields=['timestamp']),
+        ]
+        verbose_name_plural = "Activity Logs"
+
+    def __str__(self):
+        return f"{self.get_action_display()} - {self.user or 'System'} - {self.timestamp}"
+
+    @staticmethod
+    def log_action(action, user=None, description='', content_type='', object_id=None, object_repr='', ip_address=None, user_agent='', success=True, error_message=''):
+        """Create an activity log entry"""
+        ActivityLog.objects.create(
+            action=action,
+            user=user,
+            description=description,
+            content_type=content_type,
+            object_id=object_id,
+            object_repr=object_repr,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            success=success,
+            error_message=error_message
+        )
+
+
+class SystemHealth(models.Model):
+    """Monitor system health metrics"""
+
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    # Database metrics
+    database_size_mb = models.FloatField(help_text="Database size in MB")
+    active_connections = models.IntegerField(default=0)
+    slow_queries = models.IntegerField(default=0)
+    
+    # Server metrics
+    cpu_usage_percent = models.FloatField(default=0, help_text="CPU usage percentage")
+    memory_usage_percent = models.FloatField(default=0, help_text="Memory usage percentage")
+    disk_usage_percent = models.FloatField(default=0, help_text="Disk usage percentage")
+    
+    # Application metrics
+    active_users = models.IntegerField(default=0)
+    total_requests = models.IntegerField(default=0)
+    failed_requests = models.IntegerField(default=0)
+    average_response_time_ms = models.FloatField(default=0)
+    
+    # Cache metrics
+    cache_hits = models.IntegerField(default=0)
+    cache_misses = models.IntegerField(default=0)
+    
+    # Error tracking
+    error_count = models.IntegerField(default=0)
+    warning_count = models.IntegerField(default=0)
+    
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('healthy', 'Healthy'),
+            ('warning', 'Warning'),
+            ('critical', 'Critical'),
+        ],
+        default='healthy'
+    )
+    
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['timestamp']),
+            models.Index(fields=['status']),
+        ]
+        verbose_name_plural = "System Health"
+
+    def __str__(self):
+        return f"System Health - {self.timestamp} ({self.status})"
+
+    @property
+    def cache_hit_rate(self):
+        """Calculate cache hit rate percentage"""
+        total = self.cache_hits + self.cache_misses
+        if total == 0:
+            return 0
+        return (self.cache_hits / total) * 100
+
+    @property
+    def error_rate(self):
+        """Calculate error rate percentage"""
+        if self.total_requests == 0:
+            return 0
+        return (self.failed_requests / self.total_requests) * 100
+
+    def is_critical(self):
+        """Check if any metric is critical"""
+        return (
+            self.cpu_usage_percent > 90 or
+            self.memory_usage_percent > 90 or
+            self.disk_usage_percent > 90 or
+            self.error_rate > 5
+        )
+
+
+class BackupLog(models.Model):
+    """Track database and system backups"""
+
+    BACKUP_TYPES = [
+        ('full', 'Full Backup'),
+        ('incremental', 'Incremental Backup'),
+        ('database', 'Database Only'),
+        ('files', 'Files Only'),
+    ]
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+
+    backup_type = models.CharField(max_length=20, choices=BACKUP_TYPES, default='full')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    start_time = models.DateTimeField(auto_now_add=True)
+    end_time = models.DateTimeField(null=True, blank=True)
+    
+    backup_size_mb = models.FloatField(null=True, blank=True)
+    files_backed_up = models.IntegerField(default=0)
+    
+    backup_path = models.CharField(max_length=500, blank=True)
+    backup_location = models.CharField(max_length=100, blank=True, help_text="e.g., 'Local', 'Cloud', 'External Drive'")
+    
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="backups_created")
+    
+    error_message = models.TextField(blank=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-start_time']
+        indexes = [
+            models.Index(fields=['status', 'start_time']),
+            models.Index(fields=['start_time']),
+        ]
+
+    def __str__(self):
+        return f"{self.get_backup_type_display()} - {self.start_time} ({self.status})"
+
+    @property
+    def duration(self):
+        """Calculate backup duration"""
+        if self.end_time:
+            return self.end_time - self.start_time
+        return None
+
+    @property
+    def is_recent(self):
+        """Check if backup is recent (within last 24 hours)"""
+        from django.utils import timezone
+        return (timezone.now() - self.start_time).days < 1
+
