@@ -34,7 +34,7 @@ if env_allowed:
 else:
     # In development (DEBUG=True), allow localhost by default
     if DEBUG:
-        ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]"]
+        ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", "testserver"]
     else:
         # Production: must set ELIBRARY_ALLOWED_HOSTS
         ALLOWED_HOSTS = []
