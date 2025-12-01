@@ -24,8 +24,8 @@ class Command(BaseCommand):
                 'author': 'John Smith',
                 'publication_type': non_fiction,
                 'isbn': '978-3-16-148410-0',
-                'cover': 'books/sample_1.svg',
-                'description': 'Comprehensive guide to modern digital library systems and management.',
+                'cover_image': 'books/sample_1.svg',
+                'abstract': 'Comprehensive guide to modern digital library systems and management.',
                 'pages': 350,
             },
             {
@@ -34,8 +34,8 @@ class Command(BaseCommand):
                 'author': 'Sarah Johnson',
                 'publication_type': non_fiction,
                 'isbn': '978-0-06-112008-4',
-                'cover': 'books/sample_2.svg',
-                'description': 'Discover how knowledge shapes innovation in the modern world.',
+                'cover_image': 'books/sample_2.svg',
+                'abstract': 'Discover how knowledge shapes innovation in the modern world.',
                 'pages': 280,
             },
             {
@@ -44,8 +44,8 @@ class Command(BaseCommand):
                 'author': 'Dr. Michael Green',
                 'publication_type': non_fiction,
                 'isbn': '978-0-596-52068-7',
-                'cover': 'books/sample_3.svg',
-                'description': 'Explore the fascinating connections between nature and scientific discovery.',
+                'cover_image': 'books/sample_3.svg',
+                'abstract': 'Explore the fascinating connections between nature and scientific discovery.',
                 'pages': 420,
             },
             {
@@ -54,8 +54,8 @@ class Command(BaseCommand):
                 'author': 'Emma Watson',
                 'publication_type': fiction,
                 'isbn': '978-1-491-95246-4',
-                'cover': 'books/sample_4.svg',
-                'description': 'A collection of inspiring fictional tales from around the world.',
+                'cover_image': 'books/sample_4.svg',
+                'abstract': 'A collection of inspiring fictional tales from around the world.',
                 'pages': 310,
             },
             {
@@ -64,8 +64,8 @@ class Command(BaseCommand):
                 'author': 'David Brown',
                 'publication_type': non_fiction,
                 'isbn': '978-1-449-32518-0',
-                'cover': 'books/sample_5.svg',
-                'description': 'Travel through centuries of human history and cultural evolution.',
+                'cover_image': 'books/sample_5.svg',
+                'abstract': 'Travel through centuries of human history and cultural evolution.',
                 'pages': 500,
             },
             {
@@ -74,19 +74,23 @@ class Command(BaseCommand):
                 'author': 'Lisa Anderson',
                 'publication_type': non_fiction,
                 'isbn': '978-0-13-468599-1',
-                'cover': 'books/sample_6.svg',
-                'description': 'Proven strategies and insights for business success and growth.',
+                'cover_image': 'books/sample_6.svg',
+                'abstract': 'Proven strategies and insights for business success and growth.',
                 'pages': 290,
             },
         ]
 
         created_count = 0
         for book_data in books_data:
-            author_name = book_data.pop('author')
+            author_full_name = book_data.pop('author')
+            author_parts = author_full_name.split(' ', 1)
+            first_name = author_parts[0]
+            last_name = author_parts[1] if len(author_parts) > 1 else ''
             
             # Get or create author
             author, _ = Author.objects.get_or_create(
-                name=author_name,
+                first_name=first_name,
+                last_name=last_name,
                 defaults={'bio': f'Author of multiple publications'}
             )
 
@@ -97,8 +101,6 @@ class Command(BaseCommand):
                     **book_data,
                     'publication_date': date(2024, 1, 15),
                     'language': 'English',
-                    'available_copies': 5,
-                    'total_copies': 5,
                 }
             )
             
