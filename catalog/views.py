@@ -134,8 +134,10 @@ def browse_by_type(request, type_id):
     context = {
         "publication_type": publication_type,
         "page_obj": page_obj,
+        "browse_title": publication_type.name,
+        "browse_description": f"Browse all {publication_type.name} in the collection",
     }
-    return render(request, "catalog/browse_by_type.html", context)
+    return render(request, "catalog/browse_results.html", context)
 
 
 def browse_by_subject(request, subject_id):
@@ -150,8 +152,10 @@ def browse_by_subject(request, subject_id):
     context = {
         "subject": subject,
         "page_obj": page_obj,
+        "browse_title": subject.name,
+        "browse_description": f"Browse all publications on {subject.name}",
     }
-    return render(request, "catalog/browse_by_subject.html", context)
+    return render(request, "catalog/browse_results.html", context)
 
 
 def browse_by_author(request, author_id):
@@ -166,8 +170,10 @@ def browse_by_author(request, author_id):
     context = {
         "author": author,
         "page_obj": page_obj,
+        "browse_title": author.name,
+        "browse_description": f"Browse all publications by {author.name}",
     }
-    return render(request, "catalog/browse_by_author.html", context)
+    return render(request, "catalog/browse_results.html", context)
 
 
 @login_required
