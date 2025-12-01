@@ -4,6 +4,7 @@ Django settings for elibrary project.
 
 from pathlib import Path
 import os
+import logging
 
 # Optionally load a .env file in development for convenience
 try:
@@ -13,6 +14,13 @@ try:
 except Exception:
     # python-dotenv not installed or .env missing; ignore silently
     pass
+
+
+# Filter to suppress .well-known requests
+class WellKnownFilter(logging.Filter):
+    """Filter out .well-known requests from logs"""
+    def filter(self, record):
+        return "/.well-known/" not in record.getMessage()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -227,10 +235,23 @@ LOGGING = {
     "formatters": {
         "verbose": {"format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"},
     },
+    "filters": {
+        "suppress_well_known": {
+            "()": "elibrary.settings.WellKnownFilter",
+        },
+    },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "verbose",
+            "filters": ["suppress_well_known"],
+        },
+    },
+    "loggers": {
+        "django.server": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
         },
     },
     "root": {
