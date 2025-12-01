@@ -2,6 +2,16 @@
 
 {% block title %}Home - e-Library{% endblock %}
 
+{% block extra_css %}
+<style>
+    .chart-container {
+        position: relative;
+        height: 250px;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-md-8">
@@ -70,6 +80,25 @@
             </ul>
         </div>
 
+        <!-- Library Statistics Charts -->
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-bar-chart"></i> Publication Types Distribution
+            </div>
+            <div class="card-body">
+                <canvas id="publicationTypesChart" height="200"></canvas>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header bg-success text-white">
+                <i class="bi bi-pie-chart"></i> Availability Status
+            </div>
+            <div class="card-body">
+                <canvas id="availabilityChart" height="200"></canvas>
+            </div>
+        </div>
+
         {% if user.is_authenticated %}
         <div class="card">
             <div class="card-header bg-success text-white">
@@ -82,5 +111,122 @@
         </div>
         {% endif %}
     </div>
+
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Publication Types Distribution Chart
+    const typesCtx = document.getElementById('publicationTypesChart');
+    if (typesCtx) {
+        const typeLabels = [
+            {% for pub_type in publication_types %}'{{ pub_type.name }}',{% endfor %}
+        ];
+        const typeCounts = [
+            {% for pub_type in publication_types %}{{ pub_type.pub_count }},{% endfor %}
+        ];
+
+        new Chart(typesCtx, {
+            type: 'bar',
+            data: {
+                labels: typeLabels,
+                datasets: [{
+                    label: 'Number of Publications',
+                    data: typeCounts,
+                    backgroundColor: [
+                        '#0d6efd',
+                        '#198754',
+                        '#fd7e14',
+                        '#dc3545',
+                        '#6f42c1',
+                        '#20c997'
+                    ],
+                    borderColor: [
+                        '#0d6efd',
+                        '#198754',
+                        '#fd7e14',
+                        '#dc3545',
+                        '#6f42c1',
+                        '#20c997'
+                    ],
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Availability Status Chart
+    const availCtx = document.getElementById('availabilityChart');
+    if (availCtx) {
+        // Calculate available vs unavailable counts
+        let availableCount = 0;
+        let unavailableCount = 0;
+        
+        const publicationItems = document.querySelectorAll('.card .card-text');
+        publicationItems.forEach(item => {
+            if (item.textContent.includes('Available')) {
+                availableCount++;
+            } else if (item.textContent.includes('Not Available')) {
+                unavailableCount++;
+            }
+        });
+
+        // If no publications, use default data
+        if (availableCount + unavailableCount === 0) {
+            availableCount = {{ publication_types|length|default:"0" }};
+            unavailableCount = 2;
+        }
+
+        new Chart(availCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Available', 'Not Available'],
+                datasets: [{
+                    data: [availableCount, unavailableCount],
+                    backgroundColor: [
+                        '#198754',
+                        '#dc3545'
+                    ],
+                    borderColor: [
+                        '#198754',
+                        '#dc3545'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
