@@ -170,8 +170,8 @@ def browse_by_author(request, author_id):
     context = {
         "author": author,
         "page_obj": page_obj,
-        "browse_title": author.name,
-        "browse_description": f"Browse all publications by {author.name}",
+        "browse_title": str(author),
+        "browse_description": f"Browse all publications by {author}",
     }
     return render(request, "catalog/browse_results.html", context)
 
