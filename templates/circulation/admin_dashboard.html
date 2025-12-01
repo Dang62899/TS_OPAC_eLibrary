@@ -112,7 +112,7 @@
                 </div>
                 <div class="card-body">
                     <p class="text-muted">Manage all system users and their roles</p>
-                    <a href="{% url 'accounts:manage_users' %}" class="btn btn-danger btn-block">
+                    <a href="{% url 'accounts:manage_users' %}" class="btn btn-danger w-100">
                         <i class="fas fa-list"></i> View All Users
                     </a>
                 </div>
@@ -126,7 +126,7 @@
                 </div>
                 <div class="card-body">
                     <p class="text-muted">Configure library settings and policies</p>
-                    <button class="btn btn-warning btn-block" disabled>
+                    <button class="btn btn-warning w-100" disabled>
                         <i class="fas fa-sliders-h"></i> Settings (Coming Soon)
                     </button>
                 </div>
@@ -140,7 +140,7 @@
                 </div>
                 <div class="card-body">
                     <p class="text-muted">View detailed system and circulation reports</p>
-                    <a href="{% url 'circulation:reports' %}" class="btn btn-info btn-block">
+                    <a href="{% url 'circulation:reports' %}" class="btn btn-info w-100">
                         <i class="fas fa-chart-bar"></i> View Reports
                     </a>
                 </div>
@@ -157,8 +157,8 @@
                 </div>
                 <div class="card-body">
                     <p class="text-muted mb-3">{{ staff_count }} staff members in system</p>
-                    <div class="btn-group-vertical btn-block">
-                        <a href="{% url 'accounts:manage_users' %}?user_type=staff" class="btn btn-outline-secondary text-left">
+                    <div class="d-grid">
+                        <a href="{% url 'accounts:manage_users' %}?user_type=staff" class="btn btn-outline-secondary">
                             <i class="fas fa-list"></i> View All Staff
                         </a>
                     </div>
@@ -172,15 +172,15 @@
                     <h5 class="mb-0"><i class="fas fa-fast-forward"></i> Quick Actions</h5>
                 </div>
                 <div class="card-body">
-                    <div class="btn-group-vertical btn-block">
-                        <a href="{% url 'circulation:checkout' %}" class="btn btn-outline-primary text-left">
-                            <i class="fas fa-check"></i> Staff: Check Out Items
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'circulation:checkout' %}" class="btn btn-primary">
+                            <i class="fas fa-check"></i> Check Out Items
                         </a>
-                        <a href="{% url 'circulation:checkin' %}" class="btn btn-outline-success text-left">
-                            <i class="fas fa-undo"></i> Staff: Check In Items
+                        <a href="{% url 'circulation:checkin' %}" class="btn btn-success">
+                            <i class="fas fa-undo"></i> Check In Items
                         </a>
-                        <a href="{% url 'circulation:borrower_list' %}" class="btn btn-outline-info text-left">
-                            <i class="fas fa-address-book"></i> Staff: Borrower List
+                        <a href="{% url 'circulation:borrower_list' %}" class="btn btn-info">
+                            <i class="fas fa-address-book"></i> Borrower List
                         </a>
                     </div>
                 </div>

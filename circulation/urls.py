@@ -4,6 +4,8 @@ from . import views
 app_name = "circulation"
 
 urlpatterns = [
+    # Circulation Hub - Central point for all circulation operations
+    path("hub/", views.circulation_hub, name="circulation_hub"),
     # Dashboards - Role-based
     path("admin-dashboard/", views.admin_dashboard, name="admin_dashboard"),
     path("staff-dashboard/", views.staff_dashboard, name="staff_dashboard"),

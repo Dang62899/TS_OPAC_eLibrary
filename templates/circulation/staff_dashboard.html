@@ -63,12 +63,10 @@
     <!-- Primary Actions -->
     <div class="row mb-4">
         <div class="col-md-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-tasks"></i> Primary Operations</h5>
-                </div>
+            <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <div class="btn-group" role="group" aria-label="Primary operations">
+                    <h5 class="card-title mb-3"><i class="fas fa-tasks"></i> Primary Operations</h5>
+                    <div class="d-flex flex-wrap gap-2">
                         <a href="{% url 'circulation:checkout' %}" class="btn btn-primary">
                             <i class="fas fa-check"></i> Check Out
                         </a>
@@ -98,17 +96,17 @@
                     <h5 class="mb-0"><i class="fas fa-chart-line"></i> Staff Resources</h5>
                 </div>
                 <div class="card-body">
-                    <div class="btn-group-vertical btn-block">
-                        <a href="{% url 'circulation:reports' %}" class="btn btn-outline-secondary text-left">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'circulation:reports' %}" class="btn btn-outline-secondary">
                             <i class="fas fa-file-alt"></i> View Reports
                         </a>
-                        <a href="{% url 'circulation:overdue_report' %}" class="btn btn-outline-danger text-left">
+                        <a href="{% url 'circulation:overdue_report' %}" class="btn btn-outline-danger">
                             <i class="fas fa-exclamation-triangle"></i> Overdue Report
                         </a>
-                        <a href="{% url 'circulation:circulation_stats' %}" class="btn btn-outline-info text-left">
+                        <a href="{% url 'circulation:circulation_stats' %}" class="btn btn-outline-info">
                             <i class="fas fa-chart-bar"></i> Circulation Stats
                         </a>
-                        <a href="{% url 'circulation:transit_list' %}" class="btn btn-outline-warning text-left">
+                        <a href="{% url 'circulation:transit_list' %}" class="btn btn-outline-warning">
                             <i class="fas fa-shipping-fast"></i> Transit Items
                         </a>
                     </div>
@@ -122,11 +120,11 @@
                     <h5 class="mb-0"><i class="fas fa-box"></i> Item Management</h5>
                 </div>
                 <div class="card-body">
-                    <div class="btn-group-vertical btn-block">
-                        <a href="{% url 'circulation:send_in_transit' %}" class="btn btn-outline-primary text-left">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'circulation:send_in_transit' %}" class="btn btn-outline-primary">
                             <i class="fas fa-arrow-right"></i> Send Item in Transit
                         </a>
-                        <a href="{% url 'circulation:receive_in_transit' %}" class="btn btn-outline-success text-left">
+                        <a href="{% url 'circulation:receive_in_transit' %}" class="btn btn-outline-success">
                             <i class="fas fa-arrow-left"></i> Receive In Transit
                         </a>
                     </div>

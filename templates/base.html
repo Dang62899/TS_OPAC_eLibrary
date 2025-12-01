@@ -28,9 +28,19 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'catalog:search' %}">Search Catalog</a>
                     </li>
+                    {% if user.is_authenticated and user.user_type == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'circulation:admin_dashboard' %}">Admin Dashboard</a>
+                    </li>
+                    {% endif %}
+                    {% if user.is_authenticated and user.user_type == 'staff' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'circulation:staff_dashboard' %}">Staff Dashboard</a>
+                    </li>
+                    {% endif %}
                     {% if user.is_authenticated and user.user_type in 'staff,admin' %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'circulation:staff_dashboard' %}">Circulation</a>
+                        <a class="nav-link" href="{% url 'circulation:circulation_hub' %}">Circulation</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'circulation:manage_checkout_requests' %}">Checkout Requests</a>

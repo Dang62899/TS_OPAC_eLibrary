@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Circulation Hub - e-Library{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-0">
+                <i class="fas fa-exchange-alt"></i> Circulation Hub
+            </h1>
+            <p class="text-muted">Manage all circulation operations from one central location</p>
+        </div>
+    </div>
+
+    <!-- Quick Actions Row -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="card-title mb-3">Quick Actions</h5>
+                    <div class="d-grid gap-2 d-sm-flex flex-wrap">
+                        <a href="{% url 'circulation:checkout' %}" class="btn btn-primary">
+                            <i class="fas fa-sign-out-alt"></i> Checkout Item
+                        </a>
+                        <a href="{% url 'circulation:checkin' %}" class="btn btn-success">
+                            <i class="fas fa-sign-in-alt"></i> Check In Item
+                        </a>
+                        <a href="{% url 'circulation:manage_holds' %}" class="btn btn-info">
+                            <i class="fas fa-hand-holding-heart"></i> Manage Holds
+                        </a>
+                        <a href="{% url 'circulation:borrower_list' %}" class="btn btn-warning">
+                            <i class="fas fa-users"></i> Borrowers
+                        </a>
+                        <a href="{% url 'circulation:reports' %}" class="btn btn-secondary">
+                            <i class="fas fa-chart-bar"></i> Reports
+                        </a>
+                        <a href="{% url 'circulation:transit_list' %}" class="btn btn-dark">
+                            <i class="fas fa-truck"></i> In-Transit
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-1">Active Loans</h6>
+                            <h2 class="mb-0 text-primary">{{ active_loans }}</h2>
+                        </div>
+                        <div class="text-primary" style="font-size: 2.5rem; opacity: 0.3;">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-1">Overdue Items</h6>
+                            <h2 class="mb-0 text-danger">{{ overdue_loans }}</h2>
+                        </div>
+                        <div class="text-danger" style="font-size: 2.5rem; opacity: 0.3;">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-1">Pending Checkouts</h6>
+                            <h2 class="mb-0 text-info">{{ pending_requests }}</h2>
+                        </div>
+                        <div class="text-info" style="font-size: 2.5rem; opacity: 0.3;">
+                            <i class="fas fa-hourglass-end"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Holds & Transit Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-1">Holds Waiting</h6>
+                            <h2 class="mb-0 text-success">{{ holds_waiting }}</h2>
+                        </div>
+                        <div class="text-success" style="font-size: 2.5rem; opacity: 0.3;">
+                            <i class="fas fa-pause-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-1">Ready for Pickup</h6>
+                            <h2 class="mb-0 text-warning">{{ holds_ready }}</h2>
+                        </div>
+                        <div class="text-warning" style="font-size: 2.5rem; opacity: 0.3;">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-1">In Transit</h6>
+                            <h2 class="mb-0 text-secondary">{{ items_in_transit }}</h2>
+                        </div>
+                        <div class="text-secondary" style="font-size: 2.5rem; opacity: 0.3;">
+                            <i class="fas fa-truck"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-arrow-circle-right text-success"></i> Recent Checkouts (Last 24 Hours)
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_checkouts %}
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Borrower</th>
+                                        <th>Item</th>
+                                        <th>Due Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for loan in recent_checkouts %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'circulation:borrower_detail' loan.borrower.id %}" class="text-decoration-none">
+                                                {{ loan.borrower.get_full_name }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'catalog:publication_detail' loan.item.publication.id %}" class="text-decoration-none" title="{{ loan.item.publication.title }}">
+                                                {{ loan.item.publication.title|truncatewords:3 }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <small>{{ loan.due_date|date:"M d, Y" }}</small>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="fas fa-inbox" style="font-size: 2rem; opacity: 0.5; margin-bottom: 1rem;"></i>
+                            <p>No recent checkouts</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-arrow-circle-left text-info"></i> Recent Returns (Last 24 Hours)
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_returns %}
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Borrower</th>
+                                        <th>Item</th>
+                                        <th>Return Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for loan in recent_returns %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'circulation:borrower_detail' loan.borrower.id %}" class="text-decoration-none">
+                                                {{ loan.borrower.get_full_name }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'catalog:publication_detail' loan.item.publication.id %}" class="text-decoration-none" title="{{ loan.item.publication.title }}">
+                                                {{ loan.item.publication.title|truncatewords:3 }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <small>{{ loan.return_date|date:"M d, Y" }}</small>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="fas fa-inbox" style="font-size: 2rem; opacity: 0.5; margin-bottom: 1rem;"></i>
+                            <p>No recent returns</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

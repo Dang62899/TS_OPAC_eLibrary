@@ -13,8 +13,11 @@
                 <form method="post">
                     {% csrf_token %}
                     {{ form|crispy }}
+                    {% if next %}
+                    <input type="hidden" name="next" value="{{ next }}">
+                    {% endif %}
                     <button type="submit" class="btn btn-primary">Check Out</button>
-                    <a href="{% url 'circulation:staff_dashboard' %}" class="btn btn-secondary">Cancel</a>
+                    <a href="{% if next %}{{ next }}{% else %}{% url 'circulation:circulation_hub' %}{% endif %}" class="btn btn-secondary">Cancel</a>
                 </form>
             </div>
         </div>
@@ -48,3 +51,4 @@
     </div>
 </div>
 {% endblock %}
+

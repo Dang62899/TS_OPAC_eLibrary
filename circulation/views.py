@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.utils import timezone
@@ -126,8 +127,48 @@ def staff_dashboard(request):
 
 @login_required
 @user_passes_test(is_staff_user)
+def circulation_hub(request):
+    """Central hub for circulation operations - consolidates checkout, checkin, reports, and borrower management"""
+    today = timezone.now().date()
+
+    # Get summary statistics
+    active_loans = Loan.objects.filter(status="active").count()
+    overdue_loans = Loan.objects.filter(status="active", due_date__lt=today).count()
+    holds_waiting = Hold.objects.filter(status="waiting").count()
+    holds_ready = Hold.objects.filter(status="ready").count()
+    items_in_transit = InTransit.objects.filter(status="in_transit").count()
+    pending_requests = CheckoutRequest.objects.filter(status="pending").count()
+
+    # Recent activity
+    recent_checkouts = Loan.objects.filter(
+        checkout_date__gte=timezone.now() - timedelta(days=1)
+    ).select_related("item__publication", "borrower")[:5]
+
+    recent_returns = Loan.objects.filter(
+        return_date__gte=timezone.now() - timedelta(days=1),
+        status__in=["returned", "overdue_returned"]
+    ).select_related("item__publication", "borrower")[:5]
+
+    context = {
+        "active_loans": active_loans,
+        "overdue_loans": overdue_loans,
+        "holds_waiting": holds_waiting,
+        "holds_ready": holds_ready,
+        "items_in_transit": items_in_transit,
+        "pending_requests": pending_requests,
+        "recent_checkouts": recent_checkouts,
+        "recent_returns": recent_returns,
+    }
+    return render(request, "circulation/circulation_hub.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
 def checkout(request):
     """Check out an item to a borrower"""
+    # Get the 'next' parameter from either POST or GET
+    next_url = request.POST.get('next') or request.GET.get('next') or reverse('circulation:circulation_hub')
+    
     if request.method == "POST":
         form = CheckoutForm(request.POST)
         if form.is_valid():
@@ -153,17 +194,20 @@ def checkout(request):
             )
 
             messages.success(request, f"Item checked out successfully. Due date: {loan.due_date}")
-            return redirect("circulation:checkout")
+            return redirect(next_url)
     else:
         form = CheckoutForm()
 
-    return render(request, "circulation/checkout.html", {"form": form})
+    return render(request, "circulation/checkout.html", {"form": form, "next": next_url})
 
 
 @login_required
 @user_passes_test(is_staff_user)
 def checkin(request):
     """Check in a returned item"""
+    # Get the 'next' parameter from either POST or GET
+    next_url = request.POST.get('next') or request.GET.get('next') or reverse('circulation:circulation_hub')
+    
     if request.method == "POST":
         form = CheckinForm(request.POST)
         if form.is_valid():
@@ -219,11 +263,11 @@ def checkin(request):
                 messages.info(request, f"Item placed on hold shelf for {hold.borrower}")
 
             messages.success(request, "Item checked in successfully.")
-            return redirect("circulation:checkin")
+            return redirect(next_url)
     else:
         form = CheckinForm()
 
-    return render(request, "circulation/checkin.html", {"form": form})
+    return render(request, "circulation/checkin.html", {"form": form, "next": next_url})
 
 
 @login_required
