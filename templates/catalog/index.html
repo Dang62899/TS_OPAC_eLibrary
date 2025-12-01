@@ -37,6 +37,13 @@
             {% for publication in recent_publications %}
             <div class="col-md-6 mb-3">
                 <div class="card h-100">
+                    {% if publication.cover_image %}
+                    <img src="{{ publication.cover_image.url }}" class="card-img-top" alt="{{ publication.title }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 200px; color: white;">
+                        <i class="bi bi-book" style="font-size: 3rem;"></i>
+                    </div>
+                    {% endif %}
                     <div class="card-body">
                         <h5 class="card-title">
                             <a href="{% url 'catalog:publication_detail' publication.id %}">{{ publication.title }}</a>
