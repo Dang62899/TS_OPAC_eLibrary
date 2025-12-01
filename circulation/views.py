@@ -122,7 +122,7 @@ def staff_dashboard(request):
         "daily_checkouts": daily_checkouts,
         "daily_returns": daily_returns,
     }
-    return render(request, "circulation/dashboard.html", context)
+    return render(request, "circulation/staff_dashboard.html", context)
 
 
 @login_required

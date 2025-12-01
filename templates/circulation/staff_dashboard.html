@@ -3,84 +3,107 @@
 {% block title %}Staff Dashboard - e-Library{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1 class="mb-4">
-        <i class="fas fa-briefcase"></i> Staff Dashboard
-    </h1>
-
-    <!-- Key Metrics -->
+<div class="container-fluid">
     <div class="row mb-4">
-        <div class="col-md-2">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h3>{{ active_loans }}</h3>
-                    <p class="text-muted mb-0">Active Loans</p>
+        <div class="col-12">
+            <h1 class="mb-0">
+                <i class="fas fa-briefcase"></i> Staff Dashboard
+            </h1>
+            <p class="text-muted">Circulation metrics and quick access to staff operations</p>
+        </div>
+    </div>
+
+    <!-- Key Metrics - Improved Layout -->
+    <div class="row mb-4">
+        <div class="col-lg-2 col-md-3 col-sm-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="text-primary" style="font-size: 2rem; margin-bottom: 0.5rem;">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <h3 class="mb-1">{{ active_loans }}</h3>
+                    <p class="text-muted mb-0 small">Active Loans</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-2">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h3 class="text-danger">{{ overdue_loans }}</h3>
-                    <p class="text-muted mb-0">Overdue</p>
+        <div class="col-lg-2 col-md-3 col-sm-6 mb-3">
+            <div class="card border-0 shadow-sm border-left-danger">
+                <div class="card-body text-center">
+                    <div class="text-danger" style="font-size: 2rem; margin-bottom: 0.5rem;">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <h3 class="mb-1 text-danger">{{ overdue_loans }}</h3>
+                    <p class="text-muted mb-0 small">Overdue Items</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-2">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h3>{{ holds_waiting }}</h3>
-                    <p class="text-muted mb-0">Holds Waiting</p>
+        <div class="col-lg-2 col-md-3 col-sm-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="text-info" style="font-size: 2rem; margin-bottom: 0.5rem;">
+                        <i class="fas fa-pause-circle"></i>
+                    </div>
+                    <h3 class="mb-1">{{ holds_waiting }}</h3>
+                    <p class="text-muted mb-0 small">Holds Waiting</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-2">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h3 class="text-success">{{ holds_ready }}</h3>
-                    <p class="text-muted mb-0">Holds Ready</p>
+        <div class="col-lg-2 col-md-3 col-sm-6 mb-3">
+            <div class="card border-0 shadow-sm border-left-success">
+                <div class="card-body text-center">
+                    <div class="text-success" style="font-size: 2rem; margin-bottom: 0.5rem;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3 class="mb-1 text-success">{{ holds_ready }}</h3>
+                    <p class="text-muted mb-0 small">Ready for Pickup</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-2">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h3>{{ items_in_transit }}</h3>
-                    <p class="text-muted mb-0">In Transit</p>
+        <div class="col-lg-2 col-md-3 col-sm-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="text-secondary" style="font-size: 2rem; margin-bottom: 0.5rem;">
+                        <i class="fas fa-truck"></i>
+                    </div>
+                    <h3 class="mb-1">{{ items_in_transit }}</h3>
+                    <p class="text-muted mb-0 small">In Transit</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-2">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h3>{{ pending_requests }}</h3>
-                    <p class="text-muted mb-0">Pending Requests</p>
+        <div class="col-lg-2 col-md-3 col-sm-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="text-warning" style="font-size: 2rem; margin-bottom: 0.5rem;">
+                        <i class="fas fa-hourglass-end"></i>
+                    </div>
+                    <h3 class="mb-1">{{ pending_requests }}</h3>
+                    <p class="text-muted mb-0 small">Pending Requests</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Primary Actions -->
+    <!-- Quick Navigation -->
     <div class="row mb-4">
-        <div class="col-md-12">
+        <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title mb-3"><i class="fas fa-tasks"></i> Primary Operations</h5>
+                    <h5 class="card-title mb-3"><i class="fas fa-exchange-alt"></i> Quick Access</h5>
                     <div class="d-flex flex-wrap gap-2">
-                        <a href="{% url 'circulation:checkout' %}" class="btn btn-primary">
-                            <i class="fas fa-check"></i> Check Out
+                        <a href="{% url 'circulation:circulation_hub' %}" class="btn btn-primary">
+                            <i class="fas fa-th-large"></i> Circulation Hub
                         </a>
-                        <a href="{% url 'circulation:checkin' %}" class="btn btn-success">
-                            <i class="fas fa-undo"></i> Check In
+                        <a href="{% url 'circulation:checkout' %}" class="btn btn-success">
+                            <i class="fas fa-sign-out-alt"></i> Check Out
                         </a>
-                        <a href="{% url 'circulation:borrower_list' %}" class="btn btn-info">
+                        <a href="{% url 'circulation:checkin' %}" class="btn btn-info">
+                            <i class="fas fa-sign-in-alt"></i> Check In
+                        </a>
+                        <a href="{% url 'circulation:borrower_list' %}" class="btn btn-warning">
                             <i class="fas fa-users"></i> Borrowers
                         </a>
-                        <a href="{% url 'circulation:manage_holds' %}" class="btn btn-warning">
-                            <i class="fas fa-bookmark"></i> Manage Holds
-                        </a>
-                        <a href="{% url 'circulation:manage_checkout_requests' %}" class="btn btn-secondary">
-                            <i class="fas fa-inbox"></i> Checkout Requests
+                        <a href="{% url 'circulation:manage_holds' %}" class="btn btn-secondary">
+                            <i class="fas fa-hand-holding-heart"></i> Holds
                         </a>
                     </div>
                 </div>
@@ -88,43 +111,129 @@
         </div>
     </div>
 
-    <!-- Activity & Reports -->
+    <!-- Recent Activity Tables -->
     <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0"><i class="fas fa-chart-line"></i> Staff Resources</h5>
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-arrow-circle-right text-success"></i> Recent Checkouts (Last 24 Hours)
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_checkouts %}
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Borrower</th>
+                                        <th>Item</th>
+                                        <th>Due Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for loan in recent_checkouts %}
+                                    <tr>
+                                        <td>{{ loan.borrower.get_full_name }}</td>
+                                        <td>{{ loan.item.publication.title|truncatewords:3 }}</td>
+                                        <td><span class="badge bg-info">{{ loan.due_date|date:"M d" }}</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="fas fa-inbox" style="font-size: 2rem; opacity: 0.5; margin-bottom: 1rem;"></i>
+                            <p>No recent checkouts</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-arrow-circle-left text-info"></i> Recent Returns (Last 24 Hours)
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_returns %}
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Borrower</th>
+                                        <th>Item</th>
+                                        <th>Returned</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for loan in recent_returns %}
+                                    <tr>
+                                        <td>{{ loan.borrower.get_full_name }}</td>
+                                        <td>{{ loan.item.publication.title|truncatewords:3 }}</td>
+                                        <td><span class="badge bg-success">{{ loan.return_date|date:"M d" }}</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="fas fa-inbox" style="font-size: 2rem; opacity: 0.5; margin-bottom: 1rem;"></i>
+                            <p>No recent returns</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line"></i> Circulation Trends (Last 7 Days)
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="{% url 'circulation:reports' %}" class="btn btn-outline-secondary">
-                            <i class="fas fa-file-alt"></i> View Reports
-                        </a>
-                        <a href="{% url 'circulation:overdue_report' %}" class="btn btn-outline-danger">
-                            <i class="fas fa-exclamation-triangle"></i> Overdue Report
-                        </a>
-                        <a href="{% url 'circulation:circulation_stats' %}" class="btn btn-outline-info">
-                            <i class="fas fa-chart-bar"></i> Circulation Stats
-                        </a>
-                        <a href="{% url 'circulation:transit_list' %}" class="btn btn-outline-warning">
-                            <i class="fas fa-shipping-fast"></i> Transit Items
-                        </a>
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="trendChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0"><i class="fas fa-box"></i> Item Management</h5>
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar"></i> Resources & Management
+                    </h5>
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{% url 'circulation:send_in_transit' %}" class="btn btn-outline-primary">
+                        <a href="{% url 'circulation:reports' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-file-alt"></i> View Reports
+                        </a>
+                        <a href="{% url 'circulation:overdue_report' %}" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-exclamation-triangle"></i> Overdue Report
+                        </a>
+                        <a href="{% url 'circulation:circulation_stats' %}" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-bar-chart"></i> Circulation Stats
+                        </a>
+                        <a href="{% url 'circulation:transit_list' %}" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-shipping-fast"></i> Transit Items
+                        </a>
+                        <a href="{% url 'circulation:send_in_transit' %}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-arrow-right"></i> Send Item in Transit
                         </a>
-                        <a href="{% url 'circulation:receive_in_transit' %}" class="btn btn-outline-success">
+                        <a href="{% url 'circulation:receive_in_transit' %}" class="btn btn-outline-success btn-sm">
                             <i class="fas fa-arrow-left"></i> Receive In Transit
                         </a>
                     </div>
@@ -133,81 +242,64 @@
         </div>
     </div>
 
-    <!-- Recent Activity -->
+    <!-- Info Banner -->
     <div class="row">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Recent Checkouts</h5>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-sm table-striped mb-0">
-                        <thead class="thead-light">
-                            <tr>
-                                <th>Item</th>
-                                <th>Borrower</th>
-                                <th>Due Date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for loan in recent_checkouts %}
-                            <tr>
-                                <td>{{ loan.item.publication.title|truncatewords:5 }}</td>
-                                <td>{{ loan.borrower.get_full_name }}</td>
-                                <td>{{ loan.due_date|date:"M d" }}</td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="3" class="text-muted">No recent checkouts</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Recent Returns</h5>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-sm table-striped mb-0">
-                        <thead class="thead-light">
-                            <tr>
-                                <th>Item</th>
-                                <th>Borrower</th>
-                                <th>Returned</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for loan in recent_returns %}
-                            <tr>
-                                <td>{{ loan.item.publication.title|truncatewords:5 }}</td>
-                                <td>{{ loan.borrower.get_full_name }}</td>
-                                <td>{{ loan.return_date|date:"M d H:i" }}</td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="3" class="text-muted">No recent returns</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="alert alert-info" role="alert">
-                <i class="fas fa-info-circle"></i> <strong>Staff Panel:</strong>
-                You can perform circulation operations, manage borrowers, and view reports. 
-                For system configuration, contact an administrator.
+        <div class="col-12">
+            <div class="alert alert-info border-0 shadow-sm" role="alert">
+                <i class="fas fa-info-circle"></i> <strong>Staff Dashboard:</strong>
+                Use this dashboard to monitor circulation operations, manage borrowers and holds, and access reports.
+                For system administration, contact your administrator.
             </div>
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    // Circulation Trends Chart
+    const trendCtx = document.getElementById('trendChart').getContext('2d');
+    new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Today'],
+            datasets: [
+                {
+                    label: 'Checkouts',
+                    data: {{ daily_checkouts|safe }},
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2
+                },
+                {
+                    label: 'Returns',
+                    data: {{ daily_returns|safe }},
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}
