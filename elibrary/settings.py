@@ -43,10 +43,10 @@ if env_allowed:
 else:
     # In development (DEBUG=True), allow localhost by default
     if DEBUG:
-        ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", "testserver"]
+        ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", "testserver", "*.onrender.com"]
     else:
         # Production: allow render.com domains
-        ALLOWED_HOSTS = ["*.onrender.com", "onrender.com"]
+        ALLOWED_HOSTS = ["*.onrender.com", "onrender.com", "ts-opac-elibrary.onrender.com"]
 
 # Determine production mode: explicit env var only
 # Set `ELIBRARY_PRODUCTION=True` in the environment when running in production.
