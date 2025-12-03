@@ -36,7 +36,8 @@ DEBUG = os.environ.get("ELIBRARY_DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = []
 # Allow configuring allowed hosts via environment variable (comma-separated)
-env_allowed = os.environ.get("ELIBRARY_ALLOWED_HOSTS", "")
+# Check both ELIBRARY_ALLOWED_HOSTS and ALLOWED_HOSTS for flexibility
+env_allowed = os.environ.get("ELIBRARY_ALLOWED_HOSTS") or os.environ.get("ALLOWED_HOSTS", "")
 if env_allowed:
     ALLOWED_HOSTS = [h.strip() for h in env_allowed.split(",") if h.strip()]
 else:
@@ -44,8 +45,8 @@ else:
     if DEBUG:
         ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", "testserver"]
     else:
-        # Production: must set ELIBRARY_ALLOWED_HOSTS
-        ALLOWED_HOSTS = []
+        # Production: allow render.com domains
+        ALLOWED_HOSTS = ["*.onrender.com", "onrender.com"]
 
 # Determine production mode: explicit env var only
 # Set `ELIBRARY_PRODUCTION=True` in the environment when running in production.
@@ -67,10 +68,7 @@ if ELIBRARY_PRODUCTION:
     SECURE_REFERRER_POLICY = os.environ.get("ELIBRARY_REFERRER_POLICY", "no-referrer-when-downgrade")
     SECURE_BROWSER_XSS_FILTER = True
 
-    # Basic allowed hosts check - prefer explicit setting via ELIBRARY_ALLOWED_HOSTS
-    if not ALLOWED_HOSTS:
-        # If running in production without ALLOWED_HOSTS configured, fail loudly
-        raise RuntimeError("ELIBRARY_ALLOWED_HOSTS must be set in production")
+
 
 # Application definition
 
