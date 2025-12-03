@@ -191,6 +191,23 @@ LOGOUT_REDIRECT_URL = "catalog:index"
 # Ensure logout only works with POST
 LOGOUT_ALLOWED_NEXT_URL = "catalog:index"
 
+# Session Configuration
+# Use database sessions with inactivity timeout
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
+# Session timeout: 2 minutes (120 seconds) for testing - change to 1800 (30 min) for production
+SESSION_COOKIE_AGE = 120
+# Invalidate session when user closes browser (optional - set to False for persistent sessions)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# Set session cookie to secure in production only
+if ELIBRARY_PRODUCTION:
+    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_SECURE = True
+else:
+    # Development: allow non-secure cookies for testing
+    SESSION_COOKIE_SECURE = False
+    SESSION_COOKIE_HTTPONLY = True
+
 # Email settings
 # For development: Console backend (emails printed to console)
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
@@ -250,7 +267,12 @@ LOGGING = {
     "loggers": {
         "django.server": {
             "handlers": ["console"],
-            "level": "WARNING",
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "INFO",
             "propagate": False,
         },
     },
