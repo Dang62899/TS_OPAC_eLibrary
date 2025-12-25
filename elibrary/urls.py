@@ -28,6 +28,7 @@ def well_known_handler(request, path):
 
 urlpatterns = [
     path("admin/", admin.site.urls),  # Only accessible to superusers
+    path("api/v1/", include("api.urls")),  # REST API endpoints
     path("", include("catalog.urls")),
     path("circulation/", include("circulation.urls")),
     path("accounts/", include("accounts.urls")),

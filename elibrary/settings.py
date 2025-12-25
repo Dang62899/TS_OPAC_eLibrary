@@ -70,10 +70,16 @@ INSTALLED_APPS = [
     "crispy_forms",
     "crispy_bootstrap4",
     "django_celery_beat",
+    # REST Framework
+    "rest_framework",
+    "rest_framework.authtoken",
+    "drf_spectacular",
+    "django_filters",
     # Local apps
     "catalog",
     "circulation",
     "accounts",
+    "api",
 ]
 
 MIDDLEWARE = [
@@ -281,3 +287,30 @@ if os.environ.get("ELIBRARY_LOG_TO_FILE", "False") == "True":
         "formatter": "verbose",
     }
     LOGGING["root"]["handlers"].append("file")
+# REST Framework Configuration
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# drf-spectacular configuration for OpenAPI/Swagger docs
+SPECTACULAR_SETTINGS = {
+    "TITLE": "TS OPAC eLibrary API",
+    "DESCRIPTION": "Production-grade REST API for library management system",
+    "VERSION": "1.0.0",
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAuthenticated"],
+    "SCHEMA_PATH_PREFIX": "/api/v1/",
+}

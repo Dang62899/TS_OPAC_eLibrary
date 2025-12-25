@@ -8,3 +8,6 @@ django-celery-beat>=2.5.0
 redis>=5.0.0
 python-dotenv>=1.0.0
 flake8>=6.0.0
+djangorestframework>=3.14.0
+drf-spectacular>=0.26.0
+django-filter>=23.0

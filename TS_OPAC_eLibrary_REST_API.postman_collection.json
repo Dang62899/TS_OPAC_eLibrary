@@ -1,0 +1,347 @@
+{
+  "info": {
+    "_postman_id": "rest-api-collection",
+    "name": "TS OPAC eLibrary REST API",
+    "description": "Production REST API for library management system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "1.1 Register User",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"newuser\",\"email\":\"user@example.com\",\"password\":\"SecurePass123!\",\"password_confirm\":\"SecurePass123!\",\"first_name\":\"John\",\"last_name\":\"Doe\"}"
+            },
+            "url": {"raw": "http://localhost:8000/api/v1/auth/register/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "auth", "register", ""]}
+          }
+        },
+        {
+          "name": "1.2 Get Auth Token",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"admin\",\"password\":\"admin\"}"
+            },
+            "url": {"raw": "http://localhost:8000/api/v1/auth/token/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "auth", "token", ""]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Users",
+      "item": [
+        {
+          "name": "2.1 Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/users/me/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "users", "me", ""]}
+          }
+        },
+        {
+          "name": "2.2 List All Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/users/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "users", ""]}
+          }
+        },
+        {
+          "name": "2.3 Get User Details",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/users/2/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "users", "2", ""]}
+          }
+        },
+        {
+          "name": "2.4 Update User Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}, {"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"first_name\":\"John\",\"last_name\":\"Doe\",\"phone_number\":\"+1234567890\",\"city\":\"New York\"}"
+            },
+            "url": {"raw": "http://localhost:8000/api/v1/users/2/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "users", "2", ""]}
+          }
+        },
+        {
+          "name": "2.5 Get User Loans",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/users/2/loans/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "users", "2", "loans", ""]}
+          }
+        },
+        {
+          "name": "2.6 Get User Holds",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/users/2/holds/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "users", "2", "holds", ""]}
+          }
+        },
+        {
+          "name": "2.7 Get User Stats",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/users/2/stats/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "users", "2", "stats", ""]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Publications",
+      "item": [
+        {
+          "name": "3.1 List Publications",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/publications/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "publications", ""]}
+          }
+        },
+        {
+          "name": "3.2 Search Publications",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/publications/?search=django", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "publications", ""], "query": [{"key": "search", "value": "django"}]}
+          }
+        },
+        {
+          "name": "3.3 Get Publication Details",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/publications/1/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "publications", "1", ""]}
+          }
+        },
+        {
+          "name": "3.4 Check Availability",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/publications/1/availability/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "publications", "1", "availability", ""]}
+          }
+        },
+        {
+          "name": "3.5 Create Publication (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}, {"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\":\"New Book\",\"isbn\":\"978-1-234567-89-0\",\"publication_type\":1,\"authors\":[1],\"subjects\":[1],\"publisher\":\"Publisher\",\"pages\":300,\"language\":\"en\",\"abstract\":\"Description\"}"
+            },
+            "url": {"raw": "http://localhost:8000/api/v1/publications/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "publications", ""]}
+          }
+        },
+        {
+          "name": "3.6 Place Hold on Publication",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/publications/1/borrow/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "publications", "1", "borrow", ""]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Catalog Metadata",
+      "item": [
+        {
+          "name": "4.1 List Publication Types",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/publication-types/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "publication-types", ""]}
+          }
+        },
+        {
+          "name": "4.2 List Authors",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/authors/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "authors", ""]}
+          }
+        },
+        {
+          "name": "4.3 List Subjects",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/subjects/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "subjects", ""]}
+          }
+        },
+        {
+          "name": "4.4 List Items",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/items/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "items", ""]}
+          }
+        },
+        {
+          "name": "4.5 List Available Items",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/items/available/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "items", "available", ""]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Loans",
+      "item": [
+        {
+          "name": "5.1 List My Loans",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/loans/my_loans/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "loans", "my_loans", ""]}
+          }
+        },
+        {
+          "name": "5.2 List Active Loans",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/loans/active/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "loans", "active", ""]}
+          }
+        },
+        {
+          "name": "5.3 List Overdue Loans",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/loans/overdue/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "loans", "overdue", ""]}
+          }
+        },
+        {
+          "name": "5.4 Renew Loan",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/loans/1/renew/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "loans", "1", "renew", ""]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Holds",
+      "item": [
+        {
+          "name": "6.1 List My Holds",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/holds/my_holds/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "holds", "my_holds", ""]}
+          }
+        },
+        {
+          "name": "6.2 List All Holds (Staff)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/holds/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "holds", ""]}
+          }
+        },
+        {
+          "name": "6.3 Set Hold Ready (Staff)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/holds/1/set_ready/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "holds", "1", "set_ready", ""]}
+          }
+        },
+        {
+          "name": "6.4 Complete Hold (Staff)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/holds/1/complete/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "holds", "1", "complete", ""]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Notifications",
+      "item": [
+        {
+          "name": "7.1 List My Notifications",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/notifications/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "notifications", ""]}
+          }
+        },
+        {
+          "name": "7.2 List Unread Notifications",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/notifications/unread/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "notifications", "unread", ""]}
+          }
+        },
+        {
+          "name": "7.3 Mark Notification Read",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/notifications/1/mark_as_read/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "notifications", "1", "mark_as_read", ""]}
+          }
+        },
+        {
+          "name": "7.4 Mark All Read",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Token YOUR_TOKEN_HERE"}],
+            "url": {"raw": "http://localhost:8000/api/v1/notifications/mark_all_as_read/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "notifications", "mark_all_as_read", ""]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. API Documentation",
+      "item": [
+        {
+          "name": "8.1 OpenAPI Schema",
+          "request": {
+            "method": "GET",
+            "url": {"raw": "http://localhost:8000/api/v1/schema/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "schema", ""]}
+          }
+        },
+        {
+          "name": "8.2 Swagger UI",
+          "request": {
+            "method": "GET",
+            "url": {"raw": "http://localhost:8000/api/v1/docs/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "docs", ""]}
+          }
+        },
+        {
+          "name": "8.3 ReDoc",
+          "request": {
+            "method": "GET",
+            "url": {"raw": "http://localhost:8000/api/v1/redoc/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "redoc", ""]}
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {"key": "token", "value": "YOUR_TOKEN_HERE"},
+    {"key": "base_url", "value": "http://localhost:8000/api/v1"}
+  ]
+}

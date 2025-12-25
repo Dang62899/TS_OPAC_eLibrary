@@ -1,0 +1,1712 @@
+{
+  "info": {
+    "name": "TS OPAC eLibrary",
+    "description": "Postman collection for testing TS OPAC eLibrary Django project",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Get Login Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/accounts/login/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "login",
+                ""
+              ]
+            },
+            "description": "Get the login page (contains CSRF token)"
+          },
+          "response": []
+        },
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "testuser",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "testuser@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password1",
+                  "value": "TestPassword123!",
+                  "type": "text"
+                },
+                {
+                  "key": "password2",
+                  "value": "TestPassword123!",
+                  "type": "text"
+                },
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/accounts/register/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "register",
+                ""
+              ]
+            },
+            "description": "Register a new user (get CSRF token from GET login first)"
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "testuser",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "TestPassword123!",
+                  "type": "text"
+                },
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/accounts/login/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "login",
+                ""
+              ]
+            },
+            "description": "Login with username and password"
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/accounts/logout/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "logout",
+                ""
+              ]
+            },
+            "description": "Logout the current user"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Catalog",
+      "item": [
+        {
+          "name": "Home Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                ""
+              ]
+            },
+            "description": "Get the home page"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Publications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search/?q=manual",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "search",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "manual"
+                }
+              ]
+            },
+            "description": "Search for publications by keyword"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Suggestions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search-suggestions/?q=test",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "search-suggestions",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "test"
+                }
+              ]
+            },
+            "description": "Get search suggestions as you type"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Publication Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/publication/1/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "publication",
+                "1",
+                ""
+              ]
+            },
+            "description": "Get details of a specific publication (change ID as needed)"
+          },
+          "response": []
+        },
+        {
+          "name": "Browse by Type",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/browse/type/1/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "browse",
+                "type",
+                "1",
+                ""
+              ]
+            },
+            "description": "Browse publications by type"
+          },
+          "response": []
+        },
+        {
+          "name": "Browse by Subject",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/browse/subject/1/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "browse",
+                "subject",
+                "1",
+                ""
+              ]
+            },
+            "description": "Browse publications by subject"
+          },
+          "response": []
+        },
+        {
+          "name": "Browse by Author",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/browse/author/1/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "browse",
+                "author",
+                "1",
+                ""
+              ]
+            },
+            "description": "Browse publications by author"
+          },
+          "response": []
+        },
+        {
+          "name": "Manage Publications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/manage/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "manage",
+                ""
+              ]
+            },
+            "description": "View all publications (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Publication Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/add/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "add",
+                ""
+              ]
+            },
+            "description": "Get the add publication form (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Publication",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "title",
+                  "value": "Test Publication",
+                  "type": "text"
+                },
+                {
+                  "key": "isbn",
+                  "value": "978-0-123456-78-9",
+                  "type": "text"
+                },
+                {
+                  "key": "publication_type",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/add/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "add",
+                ""
+              ]
+            },
+            "description": "Create a new publication (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Edit Publication",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "title",
+                  "value": "Updated Title",
+                  "type": "text"
+                },
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/edit/1/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "edit",
+                "1",
+                ""
+              ]
+            },
+            "description": "Edit a publication (admin only, change ID as needed)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Publication",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/delete/1/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "delete",
+                "1",
+                ""
+              ]
+            },
+            "description": "Delete a publication (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Items to Publication",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/add-items/1/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "add-items",
+                "1",
+                ""
+              ]
+            },
+            "description": "Add items/copies to a publication"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Circulation",
+      "item": [
+        {
+          "name": "Circulation Hub",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/circulation/hub/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "hub",
+                ""
+              ]
+            },
+            "description": "Main circulation dashboard"
+          },
+          "response": []
+        },
+        {
+          "name": "Admin Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/circulation/admin-dashboard/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "admin-dashboard",
+                ""
+              ]
+            },
+            "description": "Admin circulation dashboard (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Staff Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/circulation/staff-dashboard/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "staff-dashboard",
+                ""
+              ]
+            },
+            "description": "Staff circulation dashboard"
+          },
+          "response": []
+        },
+        {
+          "name": "Checkout Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/circulation/checkout/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "checkout",
+                ""
+              ]
+            },
+            "description": "Get checkout page with form"
+          },
+          "response": []
+        },
+        {
+          "name": "Checkout Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "item_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "borrower_id",
+                  "value": "2",
+                  "type": "text"
+                },
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/circulation/checkout/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "checkout",
+                ""
+              ]
+            },
+            "description": "Process a checkout transaction"
+          },
+          "response": []
+        },
+        {
+          "name": "Checkin Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/circulation/checkin/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "checkin",
+                ""
+              ]
+            },
+            "description": "Get checkin page"
+          },
+          "response": []
+        },
+        {
+          "name": "Checkin Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "item_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/circulation/checkin/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "checkin",
+                ""
+              ]
+            },
+            "description": "Process a checkin transaction"
+          },
+          "response": []
+        },
+        {
+          "name": "Renew Loan",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/circulation/renew/1/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "renew",
+                "1",
+                ""
+              ]
+            },
+            "description": "Renew a loan (change loan ID as needed)"
+          },
+          "response": []
+        },
+        {
+          "name": "Renew Loan Online",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/circulation/renew-online/1/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "renew-online",
+                "1",
+                ""
+              ]
+            },
+            "description": "Online renewal of a loan"
+          },
+          "response": []
+        },
+        {
+          "name": "Place Hold",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/circulation/hold/place/1/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "hold",
+                "place",
+                "1",
+                ""
+              ]
+            },
+            "description": "Place a hold on a publication"
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Hold",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/circulation/hold/cancel/1/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "hold",
+                "cancel",
+                "1",
+                ""
+              ]
+            },
+            "description": "Cancel a hold (change hold ID as needed)"
+          },
+          "response": []
+        },
+        {
+          "name": "Manage Holds",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/circulation/holds/manage/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "holds",
+                "manage",
+                ""
+              ]
+            },
+            "description": "Manage all holds (admin/staff only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Set Hold Ready",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/circulation/hold/set-ready/1/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "hold",
+                "set-ready",
+                "1",
+                ""
+              ]
+            },
+            "description": "Mark hold as ready for pickup"
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Hold",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/circulation/hold/complete/1/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "hold",
+                "complete",
+                "1",
+                ""
+              ]
+            },
+            "description": "Complete a hold"
+          },
+          "response": []
+        },
+        {
+          "name": "Borrower List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/circulation/borrowers/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "borrowers",
+                ""
+              ]
+            },
+            "description": "List all borrowers (admin/staff only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Borrower Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/circulation/borrower/2/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "borrower",
+                "2",
+                ""
+              ]
+            },
+            "description": "View specific borrower details"
+          },
+          "response": []
+        },
+        {
+          "name": "Block Borrower",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/circulation/borrower/2/block/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "borrower",
+                "2",
+                "block",
+                ""
+              ]
+            },
+            "description": "Block a borrower from checking out items"
+          },
+          "response": []
+        },
+        {
+          "name": "Unblock Borrower",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/circulation/borrower/2/unblock/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "borrower",
+                "2",
+                "unblock",
+                ""
+              ]
+            },
+            "description": "Unblock a borrower"
+          },
+          "response": []
+        },
+        {
+          "name": "Send In Transit",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/circulation/transit/send/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "transit",
+                "send",
+                ""
+              ]
+            },
+            "description": "Send items in transit between locations"
+          },
+          "response": []
+        },
+        {
+          "name": "Receive In Transit",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/circulation/transit/receive/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "transit",
+                "receive",
+                ""
+              ]
+            },
+            "description": "Receive items from transit"
+          },
+          "response": []
+        },
+        {
+          "name": "Transit List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/circulation/transit/list/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "transit",
+                "list",
+                ""
+              ]
+            },
+            "description": "List all in-transit items"
+          },
+          "response": []
+        },
+        {
+          "name": "Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/circulation/reports/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "reports",
+                ""
+              ]
+            },
+            "description": "View circulation reports"
+          },
+          "response": []
+        },
+        {
+          "name": "Overdue Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/circulation/reports/overdue/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "reports",
+                "overdue",
+                ""
+              ]
+            },
+            "description": "View overdue items report"
+          },
+          "response": []
+        },
+        {
+          "name": "Circulation Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/circulation/reports/circulation-stats/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "reports",
+                "circulation-stats",
+                ""
+              ]
+            },
+            "description": "View circulation statistics"
+          },
+          "response": []
+        },
+        {
+          "name": "Notifications List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/circulation/notifications/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "notifications",
+                ""
+              ]
+            },
+            "description": "View user notifications"
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/circulation/notifications/1/read/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "notifications",
+                "1",
+                "read",
+                ""
+              ]
+            },
+            "description": "Mark a specific notification as read"
+          },
+          "response": []
+        },
+        {
+          "name": "Mark All Notifications as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/circulation/notifications/read-all/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "notifications",
+                "read-all",
+                ""
+              ]
+            },
+            "description": "Mark all notifications as read"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/circulation/notifications/1/delete/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "notifications",
+                "1",
+                "delete",
+                ""
+              ]
+            },
+            "description": "Delete a notification"
+          },
+          "response": []
+        },
+        {
+          "name": "Request Checkout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/circulation/checkout-request/1/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "checkout-request",
+                "1",
+                ""
+              ]
+            },
+            "description": "Request a checkout for a publication"
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Checkout Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/circulation/checkout-request/1/cancel/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "checkout-request",
+                "1",
+                "cancel",
+                ""
+              ]
+            },
+            "description": "Cancel a checkout request"
+          },
+          "response": []
+        },
+        {
+          "name": "Manage Checkout Requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/circulation/checkout-requests/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "checkout-requests",
+                ""
+              ]
+            },
+            "description": "View all checkout requests (admin/staff only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Checkout Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/circulation/checkout-request/1/approve/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "checkout-request",
+                "1",
+                "approve",
+                ""
+              ]
+            },
+            "description": "Approve a checkout request"
+          },
+          "response": []
+        },
+        {
+          "name": "Deny Checkout Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/circulation/checkout-request/1/deny/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "checkout-request",
+                "1",
+                "deny",
+                ""
+              ]
+            },
+            "description": "Deny a checkout request"
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Checkout Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/circulation/checkout-request/1/complete/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "circulation",
+                "checkout-request",
+                "1",
+                "complete",
+                ""
+              ]
+            },
+            "description": "Complete a checkout request"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Account Management",
+      "item": [
+        {
+          "name": "View Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/accounts/profile/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "profile",
+                ""
+              ]
+            },
+            "description": "View your user profile (requires login)"
+          },
+          "response": []
+        },
+        {
+          "name": "Edit Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/accounts/profile/edit/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "profile",
+                "edit",
+                ""
+              ]
+            },
+            "description": "Get profile edit form"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "first_name",
+                  "value": "John",
+                  "type": "text"
+                },
+                {
+                  "key": "last_name",
+                  "value": "Doe",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "john@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/accounts/profile/edit/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "profile",
+                "edit",
+                ""
+              ]
+            },
+            "description": "Update your profile information"
+          },
+          "response": []
+        },
+        {
+          "name": "My Account",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/accounts/my-account/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "my-account",
+                ""
+              ]
+            },
+            "description": "View user account information including loans and holds"
+          },
+          "response": []
+        },
+        {
+          "name": "Manage Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/accounts/manage-users/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "manage-users",
+                ""
+              ]
+            },
+            "description": "Manage all users (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Edit User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/accounts/edit-user/2/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "edit-user",
+                "2",
+                ""
+              ]
+            },
+            "description": "Edit a user (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrfmiddlewaretoken",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/accounts/delete-user/2/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "delete-user",
+                "2",
+                ""
+              ]
+            },
+            "description": "Delete a user (admin only)"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "csrf_token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
