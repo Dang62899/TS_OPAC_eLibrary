@@ -34,7 +34,9 @@ SECRET_KEY = os.environ.get("ELIBRARY_SECRET_KEY", "django-insecure-your-secret-
 # DEBUG controlled by env var. Default True for development, False for production
 DEBUG = os.environ.get("ELIBRARY_DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", "testserver"]
+# Parse allowed hosts from environment variable
+ALLOWED_HOSTS_ENV = os.environ.get("ELIBRARY_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1],testserver")
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(",")]
 
 # Determine production mode: explicit env var only
 # Set `ELIBRARY_PRODUCTION=True` in the environment when running in production.
@@ -70,11 +72,12 @@ INSTALLED_APPS = [
     "crispy_forms",
     "crispy_bootstrap4",
     "django_celery_beat",
-    # REST Framework
+    # REST Framework & API
     "rest_framework",
     "rest_framework.authtoken",
     "drf_spectacular",
     "django_filters",
+    "corsheaders",
     # Local apps
     "catalog",
     "circulation",
@@ -83,6 +86,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",  # CORS must be early in middleware
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -115,17 +119,30 @@ TEMPLATES = [
 WSGI_APPLICATION = "elibrary.wsgi.application"
 
 # Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+# Supports DATABASE_URL environment variable for flexible database configuration
+
+import dj_database_url
+
+# Default to SQLite for development
+DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///db.sqlite3")
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600,  # Persistent database connections
+        conn_health_checks=True,  # Health checks for connections
+    )
 }
 
+# Ensure SQLite uses WAL mode for better concurrency
+if DATABASES["default"]["ENGINE"] == "django.db.backends.sqlite3":
+    DATABASES["default"]["OPTIONS"] = {
+        "init_command": "PRAGMA journal_mode=WAL;",
+    }
+
 # Password validation
-# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
+# https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -133,6 +150,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 8},
     },
     {
         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
@@ -302,9 +320,39 @@ REST_FRAMEWORK = {
         "rest_framework.filters.OrderingFilter",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 20,
+    "PAGE_SIZE": int(os.environ.get("API_PAGE_SIZE", "20")),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": os.environ.get("API_ANON_RATE_LIMIT", "100/hour"),
+        "user": os.environ.get("API_USER_RATE_LIMIT", "1000/hour"),
+    },
+    "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.NamespaceVersioning",
 }
+
+# CORS Configuration - Allow cross-origin requests from frontend apps
+CORS_ALLOWED_ORIGINS = [
+    origin.strip() for origin in os.environ.get(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8080"
+    ).split(",")
+]
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
 
 # drf-spectacular configuration for OpenAPI/Swagger docs
 SPECTACULAR_SETTINGS = {
@@ -313,4 +361,8 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAuthenticated"],
     "SCHEMA_PATH_PREFIX": "/api/v1/",
+    "CONTACT": {
+        "name": "TS OPAC eLibrary Support",
+        "email": "support@eLibrary.local",
+    },
 }
