@@ -127,7 +127,7 @@ WSGI_APPLICATION = "elibrary.wsgi.application"
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 # Supports DATABASE_URL environment variable for flexible database configuration
 
-import dj_database_url
+import dj_database_url  # type: ignore[import] - package in requirements.txt
 
 # Default to SQLite for development
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///db.sqlite3")
@@ -377,8 +377,8 @@ os.makedirs(_LOGS_DIR, exist_ok=True)
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
 if SENTRY_DSN and ELIBRARY_PRODUCTION:
     try:
-        import sentry_sdk
-        from sentry_sdk.integrations.django import DjangoIntegration
+        import sentry_sdk  # type: ignore[import] - package in requirements.txt
+        from sentry_sdk.integrations.django import DjangoIntegration  # type: ignore[import]
 
         sentry_sdk.init(
             dsn=SENTRY_DSN,

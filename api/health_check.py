@@ -233,7 +233,7 @@ class DetailedHealthCheckView(views.APIView):
         """Get system metrics"""
         
         try:
-            import psutil
+            import psutil  # type: ignore[import] - package in requirements.txt
             
             return {
                 "cpu_percent": psutil.cpu_percent(interval=0.1),
