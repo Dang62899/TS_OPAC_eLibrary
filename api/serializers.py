@@ -30,8 +30,10 @@ class UserSerializer(serializers.ModelSerializer):
             "user_type",
             "date_joined",
             "is_active",
-            "borrower_limit",
+            "max_items_allowed",
             "is_blocked",
+            "phone",
+            "address",
         ]
         read_only_fields = ["id", "date_joined", "username"]
 
@@ -41,14 +43,9 @@ class UserDetailSerializer(UserSerializer):
     
     class Meta(UserSerializer.Meta):
         fields = UserSerializer.Meta.fields + [
-            "profile_picture",
-            "bio",
-            "phone_number",
-            "address",
-            "city",
-            "state",
-            "postal_code",
-            "country",
+            "library_card_number",
+            "date_of_birth",
+            "block_reason",
         ]
 
 
@@ -283,7 +280,7 @@ class HoldSerializer(serializers.ModelSerializer):
     publication_title = serializers.CharField(
         source="publication.title", read_only=True
     )
-    user_name = serializers.CharField(source="user.get_full_name", read_only=True)
+    borrower_name = serializers.CharField(source="borrower.get_full_name", read_only=True)
     queue_position = serializers.SerializerMethodField()
 
     class Meta:
@@ -292,13 +289,13 @@ class HoldSerializer(serializers.ModelSerializer):
             "id",
             "publication",
             "publication_title",
-            "user",
-            "user_name",
+            "borrower",
+            "borrower_name",
             "hold_date",
             "queue_position",
             "status",
             "ready_date",
-            "pickup_deadline",
+            "expiry_date",
         ]
         read_only_fields = ["id", "hold_date", "queue_position"]
 
