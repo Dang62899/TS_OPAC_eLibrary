@@ -12,7 +12,7 @@ class IsOwnerOrAdmin(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         # Admins can do anything
-        if request.user and request.user.user_type == "admin":
+        if request.user and request.user.is_authenticated and request.user.user_type == "admin":
             return True
         # Users can only view/edit their own profiles
         return obj == request.user
@@ -31,13 +31,30 @@ class IsStaffOrAdmin(permissions.BasePermission):
         )
 
 
+class IsAdminOrStaff(permissions.BasePermission):
+    """
+    Permission to check if user is admin or staff
+    """
+
+    def has_permission(self, request, view):
+        return (
+            request.user
+            and request.user.is_authenticated
+            and request.user.user_type in ["admin", "staff"]
+        )
+
+
 class IsAdmin(permissions.BasePermission):
     """
     Permission to check if user is admin
     """
 
     def has_permission(self, request, view):
-        return request.user and request.user.user_type == "admin"
+        return (
+            request.user
+            and request.user.is_authenticated
+            and request.user.user_type == "admin"
+        )
 
 
 class IsBorrower(permissions.BasePermission):

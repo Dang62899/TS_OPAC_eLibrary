@@ -94,6 +94,11 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Custom security middleware
+    "elibrary.security.SecurityHeadersMiddleware",
+    "elibrary.security.SecurityLoggingMiddleware",
+    # Metrics collection middleware
+    "elibrary.metrics.MetricsMiddleware",
 ]
 
 ROOT_URLCONF = "elibrary.urls"
@@ -255,57 +260,137 @@ OVERDUE_GRACE_PERIOD_DAYS = 7
 # When False, barcode scanner-based transactions are disabled and ISBN is used instead
 BARCODE_ENABLED = False
 
-# Basic logging configuration
+# Comprehensive Logging Configuration
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "verbose": {"format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"},
+        "verbose": {
+            "format": "%(levelname)s %(asctime)s %(name)s %(process)d %(thread)d %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+        "simple": {
+            "format": "%(levelname)s %(name)s: %(message)s",
+        },
     },
     "filters": {
         "suppress_well_known": {
             "()": "elibrary.settings.WellKnownFilter",
         },
+        "require_debug_false": {
+            "()": "django.utils.log.RequireDebugFalse",
+        },
+        "require_debug_true": {
+            "()": "django.utils.log.RequireDebugTrue",
+        },
     },
     "handlers": {
         "console": {
+            "level": "DEBUG" if DEBUG else "INFO",
             "class": "logging.StreamHandler",
             "formatter": "verbose",
             "filters": ["suppress_well_known"],
         },
+        "file": {
+            "level": "INFO",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": os.path.join(BASE_DIR, "logs", "elibrary.log"),
+            "maxBytes": 10 * 1024 * 1024,  # 10MB
+            "backupCount": 10,
+            "formatter": "verbose",
+        },
+        "api_file": {
+            "level": "DEBUG",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": os.path.join(BASE_DIR, "logs", "api.log"),
+            "maxBytes": 5 * 1024 * 1024,  # 5MB
+            "backupCount": 5,
+            "formatter": "verbose",
+        },
+        "error_file": {
+            "level": "ERROR",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": os.path.join(BASE_DIR, "logs", "errors.log"),
+            "maxBytes": 5 * 1024 * 1024,  # 5MB
+            "backupCount": 5,
+            "formatter": "verbose",
+        },
+        "mail_admins": {
+            "level": "ERROR",
+            "class": "django.utils.log.AdminEmailHandler",
+            "filters": ["require_debug_false"],
+        },
     },
     "loggers": {
+        "django": {
+            "handlers": ["console", "file", "error_file"],
+            "level": os.environ.get("DJANGO_LOG_LEVEL", "INFO"),
+            "propagate": False,
+        },
         "django.server": {
             "handlers": ["console"],
             "level": "INFO",
             "propagate": False,
         },
         "django.request": {
+            "handlers": ["console", "error_file", "mail_admins"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.db.backends": {
             "handlers": ["console"],
+            "level": "DEBUG" if DEBUG else "WARNING",
+            "propagate": False,
+        },
+        "api": {
+            "handlers": ["console", "api_file"],
+            "level": "DEBUG" if DEBUG else "INFO",
+            "propagate": False,
+        },
+        "catalog": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "circulation": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "accounts": {
+            "handlers": ["console", "file"],
             "level": "INFO",
             "propagate": False,
         },
     },
     "root": {
-        "handlers": ["console"],
-        "level": os.environ.get("DJANGO_LOG_LEVEL", "INFO"),
+        "handlers": ["console", "file"],
+        "level": os.environ.get("LOG_LEVEL", "INFO"),
     },
 }
 
-# Optional file logging when environment requests it
-if os.environ.get("ELIBRARY_LOG_TO_FILE", "False") == "True":
-    LOG_DIR = os.path.join(BASE_DIR, "logs")
-    os.makedirs(LOG_DIR, exist_ok=True)
-    log_file = os.path.join(LOG_DIR, os.environ.get("ELIBRARY_LOG_FILE", "elibrary.log"))
-    LOGGING["handlers"]["file"] = {
-        "class": "logging.handlers.RotatingFileHandler",
-        "filename": log_file,
-        "maxBytes": 10 * 1024 * 1024,  # 10MB
-        "backupCount": 5,
-        "formatter": "verbose",
-    }
-    LOGGING["root"]["handlers"].append("file")
-# REST Framework Configuration
+# Create logs directory if it doesn't exist
+_LOGS_DIR = os.path.join(BASE_DIR, "logs")
+os.makedirs(_LOGS_DIR, exist_ok=True)
+
+# Sentry Error Tracking Configuration (Optional)
+SENTRY_DSN = os.environ.get("SENTRY_DSN")
+if SENTRY_DSN and ELIBRARY_PRODUCTION:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.django import DjangoIntegration
+
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            integrations=[DjangoIntegration()],
+            traces_sample_rate=0.1,
+            send_default_pii=False,
+            environment="production" if ELIBRARY_PRODUCTION else "development",
+        )
+    except ImportError:
+        pass
+
+# REST Framework Configuration with Enhanced Security
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
@@ -321,16 +406,27 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": int(os.environ.get("API_PAGE_SIZE", "20")),
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.AutoSchema",
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": os.environ.get("API_ANON_RATE_LIMIT", "100/hour"),
-        "user": os.environ.get("API_USER_RATE_LIMIT", "1000/hour"),
+        "anon": os.environ.get("API_ANON_RATE_LIMIT", "50/hour"),  # Stricter for anonymous
+        "user": os.environ.get("API_USER_RATE_LIMIT", "1000/day"),  # Generous for users
     },
     "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.NamespaceVersioning",
+    # Security settings
+    "EXCEPTION_HANDLER": "api.exceptions.custom_exception_handler",
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",  # Only JSON, no browsable API in production
+    ],
+    "COERCE_DECIMAL_TO_STRING": False,
+    "NUM_PROXIES": 1,  # For rate limiting behind proxy
+    "TEST_REQUEST_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.MultiPartRenderer",
+    ],
 }
 
 # CORS Configuration - Allow cross-origin requests from frontend apps

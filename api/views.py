@@ -11,8 +11,10 @@ from rest_framework.permissions import (
     AllowAny,
     IsAdminUser,
 )
+from rest_framework.views import APIView
+from rest_framework.authtoken.models import Token
 from django_filters.rest_framework import DjangoFilterBackend
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
 from django.utils import timezone
 from django.db.models import Q, Count
 
@@ -20,6 +22,7 @@ from catalog.models import Publication, PublicationType, Subject, Author, Item
 from circulation.models import Loan, Hold, Notification
 from accounts.models import User as CustomUser
 
+from .permissions import IsAdmin, IsAdminOrStaff, IsOwnerOrAdmin, IsStaffOrAdmin
 from .serializers import (
     UserSerializer,
     UserDetailSerializer,
@@ -44,6 +47,12 @@ from .permissions import (
     IsBorrowerOrStaff,
     IsNotBlocked,
 )
+from elibrary.caching import (
+    CacheManager,
+    QueryOptimizer,
+    StatsCacheManager,
+    invalidate_cache,
+)
 
 User = get_user_model()
 
@@ -51,6 +60,34 @@ User = get_user_model()
 # ============================================================================
 # Authentication & User Viewsets
 # ============================================================================
+
+class ObtainAuthTokenView(APIView):
+    """
+    Obtain authentication token.
+    POST /api/v1/auth/token/ - Get token
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        
+        if not username or not password:
+            return Response(
+                {'detail': 'Credentials not provided'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        user = authenticate(username=username, password=password)
+        if user is None:
+            return Response(
+                {'detail': 'Invalid credentials'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        token, created = Token.objects.get_or_create(user=user)
+        return Response({'token': token.key})
+
 
 class UserRegistrationViewSet(viewsets.ViewSet):
     """User registration endpoint"""
@@ -93,7 +130,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action == "create":
-            permission_classes = [AllowAny]
+            permission_classes = [IsAdminOrStaff]
         elif self.action in ["destroy", "list"]:
             permission_classes = [IsAdmin]
         elif self.action == "me":
@@ -214,7 +251,7 @@ class SubjectViewSet(viewsets.ModelViewSet):
 
 
 class ItemViewSet(viewsets.ModelViewSet):
-    """Item/Copy management"""
+    """Item/Copy management with query optimization"""
     
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
@@ -223,24 +260,45 @@ class ItemViewSet(viewsets.ModelViewSet):
     filterset_fields = ["publication", "status", "location"]
     search_fields = ["item_id", "isbn", "barcode"]
 
+    def get_queryset(self):
+        """Optimize queryset with select_related and prefetch_related."""
+        qs = super().get_queryset()
+        return QueryOptimizer.optimize_item_queryset(qs)
+
     def get_permissions(self):
         if self.action in ["create", "update", "destroy"]:
             permission_classes = [IsStaffOrAdmin]
         else:
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
+    
+    @invalidate_cache(prefix=CacheManager.PREFIXES['ITEM'])
+    def create(self, request, *args, **kwargs):
+        """Create item and invalidate cache."""
+        return super().create(request, *args, **kwargs)
+    
+    @invalidate_cache(prefix=CacheManager.PREFIXES['ITEM'])
+    def update(self, request, *args, **kwargs):
+        """Update item and invalidate cache."""
+        return super().update(request, *args, **kwargs)
+    
+    @invalidate_cache(prefix=CacheManager.PREFIXES['ITEM'])
+    def destroy(self, request, *args, **kwargs):
+        """Delete item and invalidate cache."""
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=["get"])
     def available(self, request):
         """Get all available items"""
         items = Item.objects.filter(status="available")
+        items = QueryOptimizer.optimize_item_queryset(items)
         serializer = self.get_serializer(items, many=True)
         return Response(serializer.data)
 
 
 class PublicationViewSet(viewsets.ModelViewSet):
     """
-    Publication management
+    Publication management with query optimization
     - GET /api/v1/publications/ - List all publications
     - POST /api/v1/publications/ - Create publication (admin only)
     - GET /api/v1/publications/{id}/ - Get publication details
@@ -264,6 +322,11 @@ class PublicationViewSet(viewsets.ModelViewSet):
     ordering_fields = ["title", "date_added", "publication_date"]
     ordering = ["-date_added"]
 
+    def get_queryset(self):
+        """Optimize queryset with select_related and prefetch_related."""
+        qs = super().get_queryset()
+        return QueryOptimizer.optimize_publication_queryset(qs)
+
     def get_serializer_class(self):
         if self.action == "retrieve":
             return PublicationDetailSerializer
@@ -278,6 +341,21 @@ class PublicationViewSet(viewsets.ModelViewSet):
         else:
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
+    
+    @invalidate_cache(prefix=CacheManager.PREFIXES['PUBLICATION'])
+    def create(self, request, *args, **kwargs):
+        """Create publication and invalidate cache."""
+        return super().create(request, *args, **kwargs)
+    
+    @invalidate_cache(prefix=CacheManager.PREFIXES['PUBLICATION'])
+    def update(self, request, *args, **kwargs):
+        """Update publication and invalidate cache."""
+        return super().update(request, *args, **kwargs)
+    
+    @invalidate_cache(prefix=CacheManager.PREFIXES['PUBLICATION'])
+    def destroy(self, request, *args, **kwargs):
+        """Delete publication and invalidate cache."""
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=["get"])
     def availability(self, request, pk=None):
@@ -329,7 +407,7 @@ class PublicationViewSet(viewsets.ModelViewSet):
 
 class LoanViewSet(viewsets.ModelViewSet):
     """
-    Loan management
+    Loan management with query optimization
     - GET /api/v1/loans/ - List loans
     - GET /api/v1/loans/my-loans/ - Get current user's loans
     - GET /api/v1/loans/{id}/renew/ - Renew a loan
@@ -343,10 +421,17 @@ class LoanViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        if not user.is_authenticated:
+            return Loan.objects.none()
+        
         if user.user_type == "admin" or user.user_type == "staff":
-            return Loan.objects.all()
-        # Borrowers can only see their own loans
-        return Loan.objects.filter(borrower=user)
+            qs = Loan.objects.all()
+        else:
+            # Borrowers can only see their own loans
+            qs = Loan.objects.filter(borrower=user)
+        
+        # Apply query optimization
+        return QueryOptimizer.optimize_loan_queryset(qs)
 
     def get_permissions(self):
         if self.action in ["create", "destroy"]:
@@ -354,11 +439,22 @@ class LoanViewSet(viewsets.ModelViewSet):
         else:
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
+    
+    @invalidate_cache(prefix=CacheManager.PREFIXES['LOAN'])
+    def create(self, request, *args, **kwargs):
+        """Create loan and invalidate cache."""
+        return super().create(request, *args, **kwargs)
+    
+    @invalidate_cache(prefix=CacheManager.PREFIXES['LOAN'])
+    def destroy(self, request, *args, **kwargs):
+        """Delete loan and invalidate cache."""
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=["get"])
     def my_loans(self, request):
         """Get current user's loans"""
         loans = Loan.objects.filter(borrower=request.user)
+        loans = QueryOptimizer.optimize_loan_queryset(loans)
         serializer = self.get_serializer(loans, many=True)
         return Response(serializer.data)
 
@@ -368,6 +464,7 @@ class LoanViewSet(viewsets.ModelViewSet):
         loans = Loan.objects.filter(return_date__isnull=True)
         if request.user.user_type == "borrower":
             loans = loans.filter(borrower=request.user)
+        loans = QueryOptimizer.optimize_loan_queryset(loans)
         serializer = self.get_serializer(loans, many=True)
         return Response(serializer.data)
 
@@ -427,15 +524,17 @@ class HoldViewSet(viewsets.ModelViewSet):
     serializer_class = HoldSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ["publication", "user", "status"]
+    filterset_fields = ["publication", "borrower", "status"]
     ordering = ["-hold_date"]
 
     def get_queryset(self):
         user = self.request.user
+        if not user.is_authenticated:
+            return Hold.objects.none()
         if user.user_type == "admin" or user.user_type == "staff":
             return Hold.objects.all()
         # Borrowers can only see their own holds
-        return Hold.objects.filter(user=user)
+        return Hold.objects.filter(borrower=user)
 
     def get_permissions(self):
         if self.action in ["destroy"]:
@@ -447,7 +546,7 @@ class HoldViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def my_holds(self, request):
         """Get current user's holds"""
-        holds = Hold.objects.filter(user=request.user)
+        holds = Hold.objects.filter(borrower=request.user)
         serializer = self.get_serializer(holds, many=True)
         return Response(serializer.data)
 
