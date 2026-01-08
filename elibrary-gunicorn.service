@@ -1,0 +1,37 @@
+[Unit]
+Description=TS OPAC eLibrary Gunicorn Application Server
+After=network.target postgresql.service
+
+[Service]
+Type=notify
+User=elibrary
+Group=www-data
+WorkingDirectory=/home/elibrary/app
+Environment="PATH=/home/elibrary/venv/bin"
+Environment="DJANGO_SETTINGS_MODULE=elibrary.settings"
+ExecStart=/home/elibrary/venv/bin/gunicorn \
+    --workers 4 \
+    --worker-class sync \
+    --bind unix:/run/gunicorn.sock \
+    --timeout 60 \
+    --access-logfile /var/log/elibrary/access.log \
+    --error-logfile /var/log/elibrary/error.log \
+    elibrary.wsgi:application
+
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGQUIT
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Security settings
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=partial
+ProtectHome=yes
+ReadWritePaths=/home/elibrary/app/media /var/log/elibrary
+
+[Install]
+WantedBy=multi-user.target

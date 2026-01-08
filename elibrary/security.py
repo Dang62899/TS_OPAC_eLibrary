@@ -20,6 +20,21 @@ import re
 logger = logging.getLogger(__name__)
 
 
+class DevNoHSTSMiddleware(MiddlewareMixin):
+    """
+    Development-only middleware to remove HSTS headers and prevent HTTPS enforcement.
+    Ensures HTTP-only access during development.
+    """
+
+    def process_response(self, request, response):
+        """Remove HSTS headers in development"""
+        # Remove any HSTS headers that might be set
+        if "Strict-Transport-Security" in response:
+            del response["Strict-Transport-Security"]
+        # Ensure no HTTPS redirect is happening
+        return response
+
+
 class SecurityHeadersMiddleware(MiddlewareMixin):
     """
     Add security headers to all responses.
