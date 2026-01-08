@@ -16,11 +16,10 @@ print("="*60 + "\n")
 # 1. Publication Types
 print("Creating publication types...")
 pub_types = [
-    ("Book", "BOOK", "Physical books"),
-    ("Journal", "JOURNAL", "Academic journals"),
-    ("Magazine", "MAGAZINE", "Magazines and periodicals"),
-    ("E-Book", "EBOOK", "Digital books"),
-    ("Reference", "REF", "Reference materials"),
+    ("Manual", "MAN", "Training and operational manuals"),
+    ("SOP", "SOP", "Standard Operating Procedures"),
+    ("Capstone Project", "CAP", "Capstone projects and theses"),
+    ("TTP", "TTP", "Tactics, Techniques, and Procedures"),
 ]
 for name, code, desc in pub_types:
     PublicationType.objects.get_or_create(name=name, defaults={'code': code, 'description': desc})
@@ -106,7 +105,7 @@ publications = []
 for title, first, last, pub_year, abstract, orig_year in publications_data:
     author = Author.objects.get(first_name=first, last_name=last)
     publisher = random.choice(publishers)
-    pub_type = PublicationType.objects.get(name="Book")
+    pub_type = PublicationType.objects.get(name="Manual")
     
     pub, created = Publication.objects.get_or_create(
         title=title,
