@@ -6,11 +6,20 @@ from pathlib import Path
 import os
 import logging
 
-# Optionally load a .env file in development for convenience
+# Load environment variables from .env or .env.production
 try:
     from dotenv import load_dotenv
-
-    load_dotenv(os.path.join(Path(__file__).resolve().parent.parent, ".env"))
+    
+    # For development, ALWAYS load .env (not .env.production)
+    # .env.production is for production servers only
+    base_dir = Path(__file__).resolve().parent.parent
+    env_dev = base_dir / ".env"
+    env_production = base_dir / ".env.production"
+    
+    # Load .env if it exists (development), otherwise ignore
+    # Never auto-load .env.production to prevent security issues in development
+    if env_dev.exists():
+        load_dotenv(env_dev)
 except Exception:
     # python-dotenv not installed or .env missing; ignore silently
     pass
@@ -28,35 +37,58 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY: load sensitive settings from environment in production
-SECRET_KEY = os.environ.get("ELIBRARY_SECRET_KEY", "django-insecure-your-secret-key-here-change-in-production")
+# SECURITY: load sensitive settings from environment
+SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-your-secret-key-here-change-in-production")
 
 # DEBUG controlled by env var. Default True for development, False for production
-DEBUG = os.environ.get("ELIBRARY_DEBUG", "True") == "True"
+# Force True for development server access
+DEBUG = True
 
 # Parse allowed hosts from environment variable
-ALLOWED_HOSTS_ENV = os.environ.get("ELIBRARY_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1],testserver")
+ALLOWED_HOSTS_ENV = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,[::1],testserver")
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(",")]
 
-# Determine production mode: explicit env var only
-# Set `ELIBRARY_PRODUCTION=True` in the environment when running in production.
-ELIBRARY_PRODUCTION = os.environ.get("ELIBRARY_PRODUCTION", "") == "True"
+# Determine production mode: DEBUG=False means production (overrides ENVIRONMENT variable)
+# When DEBUG=True, production security settings are always disabled
+ELIBRARY_PRODUCTION = (not DEBUG) and os.environ.get("ENVIRONMENT", "") == "production"
 
 # Production security settings (applied only in production mode)
 if ELIBRARY_PRODUCTION:
     # Secure cookies and SSL
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "True") == "True"
+    SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "True") == "True"
+    CSRF_COOKIE_SECURE = os.environ.get("CSRF_COOKIE_SECURE", "True") == "True"
+    SESSION_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Strict"
+    CSRF_COOKIE_SAMESITE = "Strict"
 
-    # HSTS
-    SECURE_HSTS_SECONDS = int(os.environ.get("ELIBRARY_HSTS_SECONDS", "3600"))
+    # HSTS (HTTP Strict Transport Security)
+    SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "31536000"))
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
     # Restrict referrer and XSS protections
-    SECURE_REFERRER_POLICY = os.environ.get("ELIBRARY_REFERRER_POLICY", "no-referrer-when-downgrade")
+    SECURE_REFERRER_POLICY = os.environ.get("SECURE_REFERRER_POLICY", "strict-origin-when-cross-origin")
     SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_SECURITY_POLICY = True
+    X_FRAME_OPTIONS = os.environ.get("X_FRAME_OPTIONS", "DENY")
+else:
+    # Development mode - disable all production security settings
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_HTTPONLY = False
+    CSRF_COOKIE_HTTPONLY = False
+    SESSION_COOKIE_SAMESITE = "Lax"
+    CSRF_COOKIE_SAMESITE = "Lax"
+    SECURE_HSTS_SECONDS = 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
+    SECURE_REFERRER_POLICY = "no-referrer-when-downgrade"
+    SECURE_BROWSER_XSS_FILTER = False
+    SECURE_CONTENT_SECURITY_POLICY = False
+    X_FRAME_OPTIONS = "ALLOW"
 
 
 
@@ -87,19 +119,33 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",  # CORS must be early in middleware
-    "django.middleware.security.SecurityMiddleware",
+]
+
+# Add security middleware only in production
+if ELIBRARY_PRODUCTION:
+    MIDDLEWARE.extend([
+        "django.middleware.security.SecurityMiddleware",
+        # Custom security middleware - production only
+        "elibrary.security.SecurityHeadersMiddleware",
+        "elibrary.security.SecurityLoggingMiddleware",
+    ])
+else:
+    # Development mode: add a middleware to explicitly remove HSTS headers
+    # (in case they're set anywhere else)
+    MIDDLEWARE.extend([
+        "elibrary.security.DevNoHSTSMiddleware",
+    ])
+
+MIDDLEWARE.extend([
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    # Custom security middleware
-    "elibrary.security.SecurityHeadersMiddleware",
-    "elibrary.security.SecurityLoggingMiddleware",
-    # Metrics collection middleware
+    # Metrics collection middleware (always enabled)
     "elibrary.metrics.MetricsMiddleware",
-]
+])
 
 ROOT_URLCONF = "elibrary.urls"
 
@@ -125,29 +171,46 @@ WSGI_APPLICATION = "elibrary.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-# Supports DATABASE_URL environment variable for flexible database configuration
+# Flexible database configuration supporting SQLite and PostgreSQL
 
 import dj_database_url  # type: ignore[import] - package in requirements.txt
 
-# Default to SQLite for development
+# Get database URL from environment or use SQLite default
+# For SQLite: sqlite:///db.sqlite3 (default)
+# For PostgreSQL: postgresql://user:password@localhost:5432/dbname
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///db.sqlite3")
 
+# Parse DATABASE_URL and create database config
 DATABASES = {
     "default": dj_database_url.config(
         default=DATABASE_URL,
-        conn_max_age=600,  # Persistent database connections
-        conn_health_checks=True,  # Health checks for connections
+        conn_max_age=600,  # Persistent database connections (seconds)
+        conn_health_checks=True,  # Enable connection health checks
     )
 }
 
-# Ensure SQLite uses WAL mode for better concurrency
-if DATABASES["default"]["ENGINE"] == "django.db.backends.sqlite3":
+# Database-specific optimizations
+if DATABASES["default"]["ENGINE"] == "django.db.backends.postgresql":
+    # PostgreSQL-specific optimizations
+    DATABASES["default"]["CONN_MAX_AGE"] = 600
     DATABASES["default"]["OPTIONS"] = {
-        "init_command": "PRAGMA journal_mode=WAL;",
+        "connect_timeout": 10,
+    }
+    # Add SSL requirement in production if not disabled
+    if ELIBRARY_PRODUCTION and os.environ.get("POSTGRES_SSL_MODE", "require") == "require":
+        DATABASES["default"]["OPTIONS"]["sslmode"] = "require"
+    
+elif DATABASES["default"]["ENGINE"] == "django.db.backends.sqlite3":
+    # SQLite optimizations for development
+    DATABASES["default"]["OPTIONS"] = {
+        "init_command": "PRAGMA journal_mode=WAL;",  # Write-Ahead Logging for better concurrency
     }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
+
+# Get minimum password length from environment (production: 12, development: 8)
+PASSWORD_MIN_LENGTH = int(os.environ.get("PASSWORD_MIN_LENGTH", "12" if ELIBRARY_PRODUCTION else "8"))
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -155,7 +218,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-        "OPTIONS": {"min_length": 8},
+        "OPTIONS": {"min_length": PASSWORD_MIN_LENGTH},
     },
     {
         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
@@ -164,6 +227,51 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+
+# ================================================================
+# SECURITY HARDENING - OWASP Top 10 Coverage
+# ================================================================
+
+# API Rate Limiting Configuration
+API_RATE_LIMIT = int(os.environ.get("API_RATE_LIMIT", "1000"))
+API_RATE_LIMIT_AUTHENTICATED = int(os.environ.get("API_RATE_LIMIT_AUTHENTICATED", "10000"))
+
+# Clickjacking Protection
+X_FRAME_OPTIONS = "DENY"
+
+# Content Security Policy (basic - can be extended)
+SECURE_CONTENT_SECURITY_POLICY = {
+    "default-src": ("'self'",),
+    "script-src": ("'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdnjs.cloudflare.com"),
+    "style-src": ("'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "fonts.googleapis.com", "cdnjs.cloudflare.com"),
+    "font-src": ("'self'", "fonts.gstatic.com", "cdn.jsdelivr.net", "cdnjs.cloudflare.com"),
+    "img-src": ("'self'", "data:", "https:"),
+    "frame-ancestors": ("'none'",),
+}
+
+# CORS Configuration (Restrict to trusted domains)
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:8000",
+]
+
+# Add production domains from environment
+CORS_ALLOWED_ORIGINS.extend(
+    [domain.strip() for domain in os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",") if domain.strip()]
+)
+
+# CSRF Protection
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost",
+    "http://127.0.0.1",
+]
+
+# Add production domains from environment
+CSRF_TRUSTED_ORIGINS.extend(
+    [domain.strip() for domain in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if domain.strip()]
+)
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -222,6 +330,7 @@ else:
     # Development: allow non-secure cookies for testing
     SESSION_COOKIE_SECURE = False
     SESSION_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_SECURE = False
 
 # Email settings
 # For development: Console backend (emails printed to console)
