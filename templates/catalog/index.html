@@ -32,40 +32,54 @@
             </div>
         </div>
 
-        <h3>Recently Added Publications</h3>
+        <h3>📚 Recently Added Publications</h3>
         <div class="row">
             {% for publication in recent_publications %}
-            <div class="col-md-6 mb-3">
-                <div class="card h-100">
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                <div class="card h-100 book-card shadow-sm" style="transition: all 0.3s ease; border: none; overflow: hidden;">
                     {% if publication.cover_image %}
-                    <img src="{{ publication.cover_image.url }}" class="card-img-top" alt="{{ publication.title }}" style="height: 200px; object-fit: cover;">
+                    <div class="position-relative" style="background: #f8f9fa; min-height: 280px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                        <img src="{{ publication.cover_image.url }}" alt="{{ publication.title }}" style="max-width: 100%; max-height: 280px; object-fit: contain; padding: 10px;">
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <span class="badge bg-success">New</span>
+                        </div>
+                    </div>
                     {% else %}
-                    <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 200px; color: white;">
-                        <i class="bi bi-book" style="font-size: 3rem;"></i>
+                    <div class="card-img-top bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 280px; display: flex; align-items: center; justify-content: center; color: white;">
+                        <div class="text-center">
+                            <i class="bi bi-book" style="font-size: 3rem; opacity: 0.8;"></i>
+                            <p class="mt-2 small">No Cover</p>
+                        </div>
                     </div>
                     {% endif %}
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <a href="{% url 'catalog:publication_detail' publication.id %}">{{ publication.title }}</a>
-                        </h5>
-                        <p class="card-text text-muted small">
-                            {{ publication.get_authors_display|truncatewords:3 }}
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title" style="min-height: 2.5em;">
+                            <a href="{% url 'catalog:publication_detail' publication.id %}" class="text-decoration-none text-dark">
+                                {{ publication.title|truncatewords:6 }}
+                            </a>
+                        </h6>
+                        <p class="card-text text-muted small mb-2" style="min-height: 1.5em;">
+                            <small>{{ publication.get_authors_display|truncatewords:2 }}</small>
                         </p>
-                        <p class="card-text">
-                            <span class="badge bg-info">{{ publication.publication_type }}</span>
+                        <p class="card-text mb-2">
+                            <span class="badge bg-primary small">{{ publication.publication_type.code }}</span>
                         </p>
-                        <p class="card-text small">
+                        {% if publication.publication_date %}
+                        <p class="card-text small text-muted mb-2">📅 {{ publication.publication_date.year }}</p>
+                        {% endif %}
+                        <p class="card-text small mt-auto">
                             {% if publication.is_available %}
-                                <span class="text-success"><i class="bi bi-check-circle"></i> Available</span>
+                                <span class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> In Stock</span>
                             {% else %}
-                                <span class="text-danger"><i class="bi bi-x-circle"></i> Not Available</span>
+                                <span class="text-warning"><i class="bi bi-exclamation-circle"></i> Reserved</span>
                             {% endif %}
                         </p>
+                        <a href="{% url 'catalog:publication_detail' publication.id %}" class="btn btn-sm btn-outline-primary mt-2">View Details</a>
                     </div>
                 </div>
             </div>
             {% empty %}
-            <p>No publications available yet.</p>
+            <div class="alert alert-info col-12">No publications available yet.</div>
             {% endfor %}
         </div>
     </div>
