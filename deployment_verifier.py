@@ -1,8 +1,15 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Deployment Verification Script - Verify system is ready for go-live
 Runs all pre-deployment and post-deployment checks
 """
+import sys
+import io
+
+# Fix Windows encoding issue
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 import subprocess
 

@@ -1,8 +1,15 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Security Audit Script - Comprehensive security testing
 Tests: SSL/TLS, Security headers, CSRF protection, SQL injection, XSS, auth
 """
+import sys
+import io
+
+# Fix Windows encoding issue
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 try:
     import requests  # type: ignore
@@ -12,6 +19,7 @@ except ImportError:
 
 from urllib.parse import urlencode
 import time
+
 
 BASE_URL = "http://localhost"
 HTTPS_URL = "https://localhost"

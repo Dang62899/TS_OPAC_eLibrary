@@ -1,8 +1,15 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Load Testing Script - Tests system under concurrent load
 Tests typical user scenarios: browsing, searching, viewing analytics
 """
+import sys
+import io
+
+# Fix Windows encoding issue
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 try:
     import requests  # type: ignore
