@@ -4,7 +4,12 @@ Security Audit Script - Comprehensive security testing
 Tests: SSL/TLS, Security headers, CSRF protection, SQL injection, XSS, auth
 """
 
-import requests
+try:
+    import requests  # type: ignore
+except ImportError:
+    print("ERROR: 'requests' library not installed. Install with: pip install requests")
+    exit(1)
+
 from urllib.parse import urlencode
 import time
 
