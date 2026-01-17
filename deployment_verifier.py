@@ -5,7 +5,13 @@ Runs all pre-deployment and post-deployment checks
 """
 
 import subprocess
-import requests
+
+try:
+    import requests  # type: ignore
+except ImportError:
+    print("ERROR: 'requests' library not installed. Install with: pip install requests")
+    exit(1)
+
 import json
 from datetime import datetime
 import time

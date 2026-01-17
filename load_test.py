@@ -4,7 +4,12 @@ Load Testing Script - Tests system under concurrent load
 Tests typical user scenarios: browsing, searching, viewing analytics
 """
 
-import requests
+try:
+    import requests  # type: ignore
+except ImportError:
+    print("ERROR: 'requests' library not installed. Install with: pip install requests")
+    exit(1)
+
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import statistics
