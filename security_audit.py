@@ -5,7 +5,6 @@ Tests: SSL/TLS, Security headers, CSRF protection, SQL injection, XSS, auth
 """
 
 import requests
-import json
 from urllib.parse import urlencode
 import time
 
