@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Comprehensive System Test Suite
 Tests all critical functionality after publication type correction
@@ -6,6 +7,11 @@ Tests all critical functionality after publication type correction
 import os
 import sys
 import django
+import io
+
+# Fix Windows encoding issue
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'elibrary.settings')
 django.setup()
