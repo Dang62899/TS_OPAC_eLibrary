@@ -27,6 +27,44 @@
 <div id="searchResults" class="fade-in">
     <h3>Search Results ({{ total_results }} found)</h3>
 
+    {% if facets.publication_types or facets.languages or facets.authors or facets.subjects %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5>Refine Results</h5>
+            {% if facets.publication_types %}
+            <div class="mb-3">
+                <strong>Types</strong>
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    {% for facet in facets.publication_types %}
+                    <a class="btn btn-sm btn-outline-secondary" href="?{{ request.GET.urlencode }}&publication_type={{ facet.id }}">{{ facet.name }} ({{ facet.count }})</a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% if facets.languages %}
+            <div class="mb-3">
+                <strong>Languages</strong>
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    {% for facet in facets.languages %}
+                    <a class="btn btn-sm btn-outline-secondary" href="?{{ request.GET.urlencode }}&language={{ facet.language }}">{{ facet.language }} ({{ facet.count }})</a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% if facets.availability %}
+            <div class="mb-3">
+                <strong>Availability</strong>
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    {% for facet in facets.availability %}
+                    <a class="btn btn-sm btn-outline-secondary" href="?{{ request.GET.urlencode }}&available_only=on">{{ facet.status }} ({{ facet.count }})</a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
     <div class="row">
         {% for publication in page_obj %}
         <div class="col-md-12 mb-3">

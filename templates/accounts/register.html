@@ -11,6 +11,11 @@
                 <h3 class="mb-0">Register for Library Account</h3>
             </div>
             <div class="card-body">
+                {% if user.is_authenticated and user.user_type == 'admin' %}
+                <div class="alert alert-info">
+                    <strong>Admin mode:</strong> Create a new staff or admin user using the form below.
+                </div>
+                {% endif %}
                 <form method="post">
                     {% csrf_token %}
                     {{ form|crispy }}
@@ -19,7 +24,9 @@
                     </div>
                 </form>
                 <hr>
+                {% if not user.is_authenticated %}
                 <p class="text-center mb-0">Already have an account? <a href="{% url 'accounts:login' %}">Login here</a></p>
+                {% endif %}
             </div>
         </div>
     </div>
