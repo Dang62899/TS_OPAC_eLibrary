@@ -1,5 +1,5 @@
 from django import forms
-from .models import Publication, PublicationType, Item
+from .models import Publication, PublicationType, Item, Location
 
 
 class PublicationForm(forms.ModelForm):
@@ -92,7 +92,26 @@ class SearchForm(forms.Form):
     available_only = forms.BooleanField(
         required=False, initial=False, widget=forms.CheckboxInput(attrs={"class": "form-check-input"})
     )
+    location = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        empty_label="All Locations",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    sort_by = forms.ChoiceField(
+        choices=[
+            ("relevance", "Relevance"),
+            ("title", "Title"),
+            ("date", "Newest"),
+            ("date_asc", "Oldest"),
+            ("popularity", "Most Borrowed"),
+        ],
+        required=False,
+        initial="relevance",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["publication_type"].queryset = PublicationType.objects.all()
+        self.fields["location"].queryset = Location.objects.all()

@@ -742,8 +742,26 @@ def transit_list(request):
 @login_required
 @user_passes_test(is_staff_user)
 def reports(request):
-    """Reports dashboard"""
-    return render(request, "circulation/reports.html")
+    """Reports dashboard with summary metrics and quick links."""
+    today = timezone.now().date()
+    last_30_days = today - timedelta(days=30)
+
+    overdue_loans = Loan.objects.filter(status="active", due_date__lt=today).count()
+    active_loans = Loan.objects.filter(status="active").count()
+    total_checkouts = Loan.objects.filter(checkout_date__gte=last_30_days).count()
+    total_returns = Loan.objects.filter(return_date__gte=last_30_days).count()
+    pending_holds = Hold.objects.filter(status="waiting").count()
+    blocked_borrowers = User.objects.filter(is_blocked=True).count()
+
+    context = {
+        "overdue_loans": overdue_loans,
+        "active_loans": active_loans,
+        "total_checkouts": total_checkouts,
+        "total_returns": total_returns,
+        "pending_holds": pending_holds,
+        "blocked_borrowers": blocked_borrowers,
+    }
+    return render(request, "circulation/reports.html", context)
 
 
 @login_required

@@ -19,6 +19,8 @@ class User(AbstractUser):
     is_blocked = models.BooleanField(default=False)
     block_reason = models.TextField(blank=True)
     max_items_allowed = models.IntegerField(default=5)
+    otp_secret = models.CharField(max_length=64, blank=True, default="")
+    two_factor_enabled = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["username"]

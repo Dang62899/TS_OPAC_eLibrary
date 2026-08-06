@@ -35,7 +35,7 @@
             {% endif %}
             <div class="card-body d-flex flex-column">
                 <h6 class="card-title">
-                    <a href="{% url 'catalog:publication_detail' publication.id %}" class="text-decoration-none text-dark">
+                    <a href="{% url 'catalog:publication_detail' publication.id %}" class="text-decoration-none">
                         {{ publication.title|truncatewords:8 }}
                     </a>
                 </h6>

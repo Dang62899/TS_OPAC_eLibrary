@@ -3,8 +3,9 @@ from django.db.models import Q, Count
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Publication, PublicationType, Subject, Author
+from .models import Publication, PublicationType, Subject, Author, Location
 from .forms import SearchForm, PublicationForm, ItemForm
+from .search import AdvancedSearch
 from accounts.decorators import admin_required, staff_or_admin_required
 
 
@@ -21,63 +22,57 @@ def index(request):
 
 
 def search(request):
-    """Advanced search functionality"""
+    """Advanced search functionality with boolean operators, phrase search, filters, and facets."""
     form = SearchForm(request.GET or None)
-    publications = Publication.objects.all()
 
     if form.is_valid():
-        query = form.cleaned_data.get("query")
-        search_field = form.cleaned_data.get("search_field")
+        query = form.cleaned_data.get("query") or ""
+        search_field = form.cleaned_data.get("search_field") or "all"
         publication_type = form.cleaned_data.get("publication_type")
         language = form.cleaned_data.get("language")
         year_from = form.cleaned_data.get("year_from")
         year_to = form.cleaned_data.get("year_to")
         available_only = form.cleaned_data.get("available_only")
+        location = form.cleaned_data.get("location")
+        sort_by = form.cleaned_data.get("sort_by") or "relevance"
 
-        # Apply search query
-        if query:
-            if search_field == "all":
-                publications = publications.filter(
-                    Q(title__icontains=query)
-                    | Q(subtitle__icontains=query)
-                    | Q(authors__first_name__icontains=query)
-                    | Q(authors__last_name__icontains=query)
-                    | Q(subjects__name__icontains=query)
-                    | Q(call_number__icontains=query)
-                    | Q(isbn__icontains=query)
-                    | Q(abstract__icontains=query)
-                ).distinct()
-            elif search_field == "title":
-                publications = publications.filter(Q(title__icontains=query) | Q(subtitle__icontains=query))
+        if query and search_field != "all":
+            field_query = query
+            if search_field == "title":
+                field_query = f"title:{query}"
             elif search_field == "author":
-                publications = publications.filter(
-                    Q(authors__first_name__icontains=query) | Q(authors__last_name__icontains=query)
-                ).distinct()
+                field_query = f"author:{query}"
             elif search_field == "subject":
-                publications = publications.filter(subjects__name__icontains=query).distinct()
+                field_query = f"subject:{query}"
             elif search_field == "call_number":
-                publications = publications.filter(call_number__icontains=query)
+                field_query = f"call_number:{query}"
             elif search_field == "isbn":
-                publications = publications.filter(isbn__icontains=query)
+                field_query = f"isbn:{query}"
+            query = field_query
 
-        # Apply filters
-        if publication_type:
-            publications = publications.filter(publication_type=publication_type)
+        result = AdvancedSearch.advanced_search(
+            query=query,
+            pub_type_ids=[publication_type.id] if publication_type else None,
+            language=language,
+            date_from=f"{year_from}-01-01" if year_from else None,
+            date_to=f"{year_to}-12-31" if year_to else None,
+            available_only=available_only,
+            sort_by=sort_by,
+            location=location,
+        )
+        publications = result["results"]
+        facets = result["facets"]
+    else:
+        publications = Publication.objects.all().order_by("title")
+        facets = {
+            "authors": [],
+            "subjects": [],
+            "publication_types": [],
+            "languages": [],
+            "availability": [],
+        }
 
-        if language:
-            publications = publications.filter(language__icontains=language)
-
-        if year_from:
-            publications = publications.filter(publication_date__year__gte=year_from)
-
-        if year_to:
-            publications = publications.filter(publication_date__year__lte=year_to)
-
-        if available_only:
-            publications = publications.filter(items__status="available").distinct()
-
-    # Pagination
-    paginator = Paginator(publications.distinct().order_by("title"), 20)
+    paginator = Paginator(publications.distinct(), 20)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
@@ -85,6 +80,15 @@ def search(request):
         "form": form,
         "page_obj": page_obj,
         "total_results": paginator.count,
+        "facets": facets,
+        "active_filters": {
+            "query": request.GET.get("query", ""),
+            "publication_type": request.GET.get("publication_type", ""),
+            "language": request.GET.get("language", ""),
+            "year_from": request.GET.get("year_from", ""),
+            "year_to": request.GET.get("year_to", ""),
+            "location": request.GET.get("location", ""),
+        },
     }
     return render(request, "catalog/search.html", context)
 

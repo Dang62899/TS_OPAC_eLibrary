@@ -8,6 +8,8 @@ urlpatterns = [
     path("login/", views.custom_login, name="login"),
     path("logout/", auth_views.LogoutView.as_view(next_page="catalog:index"), name="logout"),
     path("register/", views.register, name="register"),
+    path("setup-2fa/", views.setup_two_factor, name="setup_2fa"),
+    path("disable-2fa/", views.disable_two_factor, name="disable_2fa"),
     path("profile/", views.profile, name="profile"),
     path("profile/edit/", views.edit_profile, name="edit_profile"),
     path("my-account/", views.my_account, name="my_account"),

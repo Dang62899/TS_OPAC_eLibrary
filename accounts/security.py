@@ -345,6 +345,9 @@ class TwoFactorAuthManager:
         import pyotp
         
         secret = pyotp.random_base32()
+        user.otp_secret = secret
+        user.two_factor_enabled = False
+        user.save(update_fields=["otp_secret", "two_factor_enabled"])
         cache.set(cls.TOTP_KEY.format(user_id=user.id), secret, None)
         
         logger.info(f"2FA secret generated for user {user.username}")
@@ -364,7 +367,7 @@ class TwoFactorAuthManager:
         """
         import pyotp
         
-        secret = cache.get(cls.TOTP_KEY.format(user_id=user.id))
+        secret = getattr(user, "otp_secret", "") or cache.get(cls.TOTP_KEY.format(user_id=user.id))
         if not secret:
             return False
         

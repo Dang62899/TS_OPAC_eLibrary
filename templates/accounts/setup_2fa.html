@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Two-Factor Authentication - e-Library{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Two-Factor Authentication</h3>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <p>Use a standard authenticator app such as Google Authenticator or Microsoft Authenticator.</p>
+
+                {% if two_factor_enabled %}
+                <div class="alert alert-success">
+                    <strong>2FA is currently enabled.</strong> Enter a valid code below to turn it off.
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <strong>2FA is currently disabled.</strong> Set it up to add an extra layer of security.
+                </div>
+                {% endif %}
+
+                <div class="alert alert-info">
+                    <p class="mb-2"><strong>Setup steps:</strong></p>
+                    <ol>
+                        <li>Open your authenticator app (Google Authenticator, Microsoft Authenticator, etc.).</li>
+                        <li>Add a new account manually.</li>
+                        <li>Enter the secret below into your app.</li>
+                        <li>Type the 6-digit code shown in your app and submit to verify.</li>
+                    </ol>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Authenticator Secret</label>
+                    <div class="input-group">
+                        <input type="text" readonly class="form-control" value="{{ otp_secret }}" aria-label="Authenticator secret" id="authSecretInput">
+                        <button type="button" class="btn btn-outline-secondary" id="copySecretBtn">Copy</button>
+                    </div>
+                    <div class="form-text">Use this secret to set up the account manually in your authenticator app.</div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="totp_code" class="form-label">Authenticator Code</label>
+                        <input type="text" class="form-control" id="totp_code" name="totp_code" placeholder="Enter 6-digit code" maxlength="8" required>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        {% if two_factor_enabled %}
+                        <a href="{% url 'accounts:disable_2fa' %}" class="btn btn-danger">Disable 2FA</a>
+                        {% else %}
+                        <button type="submit" class="btn btn-primary">Enable 2FA</button>
+                        {% endif %}
+                        <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary">Back to Profile</a>
+                    </div>
+                </form>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        const copyButton = document.getElementById('copySecretBtn');
+                        if (copyButton) {
+                            copyButton.addEventListener('click', function () {
+                                const input = document.getElementById('authSecretInput');
+                                if (input) {
+                                    input.select();
+                                    navigator.clipboard.writeText(input.value).then(function () {
+                                        alert('Secret copied to clipboard.');
+                                    });
+                                }
+                            });
+                        }
+                    });
+                </script>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
