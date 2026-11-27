@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Borrower Details - {{ borrower.get_full_name }} - e-Library{% endblock %}
+{% block title %}Borrower Details - {{ borrower.get_full_name }} - {{ ELIBRARY_NAME }}{% endblock %}
 
 {% block content %}
 <h1>Borrower Details</h1>
@@ -28,7 +28,10 @@
                 </p>
                 
                 {% if borrower.is_blocked %}
-                    <a href="{% url 'circulation:unblock_borrower' borrower.id %}" class="btn btn-success btn-sm">Unblock</a>
+                    <form method="post" action="{% url 'circulation:unblock_borrower' borrower.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-sm">Unblock</button>
+                    </form>
                 {% else %}
                     <a href="{% url 'circulation:block_borrower' borrower.id %}" class="btn btn-danger btn-sm">Block</a>
                 {% endif %}
@@ -65,7 +68,10 @@
                         </td>
                         <td>
                             {% if loan.can_renew %}
-                                <a href="{% url 'circulation:renew_loan' loan.id %}" class="btn btn-sm btn-success">Renew</a>
+                                <form method="post" action="{% url 'circulation:renew_loan' loan.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-success">Renew</button>
+                                </form>
                             {% else %}
                                 <span class="text-muted small">Cannot renew</span>
                             {% endif %}

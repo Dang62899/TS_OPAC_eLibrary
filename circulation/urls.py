@@ -34,6 +34,7 @@ urlpatterns = [
     path("reports/", views.reports, name="reports"),
     path("reports/overdue/", views.overdue_report, name="overdue_report"),
     path("reports/circulation-stats/", views.circulation_stats, name="circulation_stats"),
+    path("reports/resource-access/", views.resource_access_log, name="resource_access_log"),
     # Notifications
     path("notifications/", views.notifications_list, name="notifications_list"),
     path("notifications/<int:notification_id>/read/", views.mark_notification_read, name="mark_notification_read"),

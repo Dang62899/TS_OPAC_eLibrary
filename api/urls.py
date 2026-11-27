@@ -19,6 +19,7 @@ from .views import (
     HoldViewSet,
     NotificationViewSet,
     ObtainAuthTokenView,
+    AcceptUserAgreementView,
 )
 from .health_check import HealthCheckView, DetailedHealthCheckView
 from .analytics_views import (
@@ -75,6 +76,7 @@ urlpatterns = [
     # Authentication
     path("auth/register/", UserRegistrationViewSet.as_view({"post": "create"}), name="register"),
     path("auth/token/", ObtainAuthTokenView.as_view(), name="token_obtain"),
+    path("auth/agreement/", AcceptUserAgreementView.as_view(), name="accept-agreement"),
     
     # Router URLs
     path("", include(router.urls)),

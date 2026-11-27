@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
-{% block title %}Edit User - e-Library{% endblock %}
+{% block title %}Edit Account - {{ ELIBRARY_NAME }}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card">
             <div class="card-header bg-primary text-white">
-                <h3 class="mb-0"><i class="bi bi-pencil"></i> Edit User: {{ user_obj.username }}</h3>
+                <h3 class="mb-0"><i class="bi bi-pencil"></i> Edit Account: {{ user_obj.username }}</h3>
             </div>
             <div class="card-body">
                 <form method="post">

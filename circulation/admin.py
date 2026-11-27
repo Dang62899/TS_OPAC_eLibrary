@@ -19,7 +19,7 @@ class LoanAdmin(admin.ModelAdmin):
 
 @admin.register(Hold)
 class HoldAdmin(admin.ModelAdmin):
-    list_display = ["publication", "borrower", "hold_date", "status", "queue_position", "pickup_location"]
+    list_display = ["publication", "borrower", "reserved_item", "hold_date", "status", "queue_position", "pickup_location"]
     list_filter = ["status", "hold_date", "pickup_location"]
     search_fields = ["publication__title", "borrower__username", "borrower__email"]
     readonly_fields = ["hold_date", "ready_date"]

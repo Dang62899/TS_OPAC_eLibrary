@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.10, 3.11]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run correctness lint on feature modules
+        run: |
+          flake8 --select=F accounts/models.py accounts/views.py accounts/admin.py accounts/forms.py accounts/tests/test_staff_user_management.py accounts/tests/test_profile.py accounts/tests/test_login_redirects.py circulation/forms.py circulation/views.py circulation/models.py circulation/tests/test_state_changing_methods.py catalog/models.py catalog/forms.py catalog/views.py catalog/tasks.py catalog/utils/pdf_utils.py catalog/tests/test_search_filters.py catalog/tests/test_attachments_and_otp.py api/views.py api/serializers.py api/tests.py elibrary/settings.py elibrary/celery.py elibrary/urls.py scripts/generate_presentation.py scripts/generate_presentation_enhanced.py
+      - name: Run migrations
+        env:
+          DATABASE_URL: sqlite:///db.sqlite3
+        run: |
+          python manage.py migrate --noinput
+      - name: Run tests
+        run: |
+          pytest

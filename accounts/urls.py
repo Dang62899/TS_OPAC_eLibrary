@@ -15,5 +15,7 @@ urlpatterns = [
     path("my-account/", views.my_account, name="my_account"),
     path("manage-users/", views.manage_users, name="manage_users"),
     path("edit-user/<int:user_id>/", views.edit_user, name="edit_user"),
+    path("reset-user-password/<int:user_id>/", views.reset_user_password, name="reset_user_password"),
     path("delete-user/<int:user_id>/", views.delete_user, name="delete_user"),
+    path("agreement/", views.user_agreement, name="user_agreement"),
 ]

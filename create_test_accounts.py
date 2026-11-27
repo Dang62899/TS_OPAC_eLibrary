@@ -18,6 +18,8 @@ for username, email, password, user_type in accounts:
             email=email,
             password=password,
             user_type=user_type,
+            is_staff=user_type in {'staff', 'admin'},
+            is_superuser=user_type == 'admin',
         )
         created = True
     else:

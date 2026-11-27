@@ -6,19 +6,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.contrib.auth.decorators import user_passes_test
 from django.http import HttpResponse
-
-# Only allow superusers to access admin
-
-
-def superuser_required(view_func):
-    decorated_view_func = user_passes_test(lambda u: u.is_superuser)(view_func)
-    return decorated_view_func
-
-
-# Wrap admin.site.urls with superuser check
-admin.site.login = superuser_required(admin.site.login)
 
 
 def well_known_handler(request, path):
@@ -26,9 +14,28 @@ def well_known_handler(request, path):
     return HttpResponse(status=404)
 
 
+def protected_attachment_media_handler(request, path):
+    """Prevent direct access to attachments outside their authorized views."""
+    return HttpResponse(status=404)
+
+
+SERVICE_WORKER_JS = """
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+self.addEventListener('fetch', () => {});
+"""
+
+
+def service_worker(request):
+    """Root-scoped service worker so the app is installable; it never caches pages."""
+    return HttpResponse(SERVICE_WORKER_JS, content_type="application/javascript")
+
+
 urlpatterns = [
+    path("sw.js", service_worker),
     path("admin/", admin.site.urls),  # Only accessible to superusers
     path("api/v1/", include("api.urls")),  # REST API endpoints
+    path("media/attachments/<path:path>", protected_attachment_media_handler),
     path("", include("catalog.urls")),
     path("circulation/", include("circulation.urls")),
     path("accounts/", include("accounts.urls")),

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from .forms import AttachmentForm
 from .models import (
     PublicationType,
     Subject,
@@ -11,6 +12,9 @@ from .models import (
     Review,
     Wishlist,
     ReadingProgress,
+    Attachment,
+    ViewLog,
+    DownloadOTP,
 )
 
 
@@ -53,8 +57,8 @@ class ItemInline(admin.TabularInline):
 
 @admin.register(Publication)
 class PublicationAdmin(admin.ModelAdmin):
-    list_display = ["title", "publication_type", "publication_date", "isbn", "get_total_copies_count"]
-    list_filter = ["publication_type", "language", "publication_date"]
+    list_display = ["title", "publication_type", "publication_date", "isbn", "research_year", "research_class", "get_total_copies_count"]
+    list_filter = ["publication_type", "language", "publication_date", "research_year", "research_class"]
     search_fields = ["title", "subtitle", "isbn", "call_number"]
     filter_horizontal = ["authors", "subjects"]
     inlines = [ItemInline]
@@ -63,6 +67,7 @@ class PublicationAdmin(admin.ModelAdmin):
         ("Basic Information", {"fields": ("title", "subtitle", "authors", "publication_type")}),
         ("Publication Details", {"fields": ("publisher", "publication_date", "edition", "isbn", "language", "pages")}),
         ("Classification", {"fields": ("subjects", "call_number")}),
+        ("Research", {"fields": ("research_year", "research_class")}),
         ("Description", {"fields": ("abstract", "summary", "cover_image")}),
     )
 
@@ -109,4 +114,36 @@ class ReadingProgressAdmin(admin.ModelAdmin):
     list_filter = ["status", "date_updated"]
     search_fields = ["user__username", "publication__title"]
     readonly_fields = ["date_added", "date_updated", "percentage_complete"]
+
+
+@admin.register(Attachment)
+class AttachmentAdmin(admin.ModelAdmin):
+    form = AttachmentForm
+    list_display = ["publication", "attachment_type", "uploader", "upload_date", "allow_download"]
+    list_filter = ["attachment_type", "allow_download"]
+    search_fields = ["publication__title", "uploader__username"]
+
+
+@admin.register(ViewLog)
+class ViewLogAdmin(admin.ModelAdmin):
+    list_display = ["timestamp", "username_snapshot", "action", "resource_label", "file_format", "ip_address"]
+    list_filter = ["action", "file_format", "timestamp"]
+    search_fields = ["username_snapshot", "resource_label"]
+    readonly_fields = [field.name for field in ViewLog._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(DownloadOTP)
+class DownloadOTPAdmin(admin.ModelAdmin):
+    list_display = ["attachment", "user", "code", "created_at", "expires_at", "used"]
+    list_filter = ["used", "created_at"]
+    search_fields = ["attachment__publication__title", "user__username", "code"]
 

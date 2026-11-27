@@ -1,8 +1,9 @@
-import base64
+﻿import base64
 import io
 import math
 import random
 from django import forms
+from django.conf import settings
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.core.cache import cache
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -30,61 +31,78 @@ def _warp_text_layer(text_layer, amplitude):
     return warped
 
 
-def build_login_challenge():
-    """Create a classic warped-word CAPTCHA image challenge with a readable answer token."""
-    samples = [
-        "A7K2",
-        "M3P9",
-        "Q8R1",
-        "L4X6",
-    ]
-    correct_value = random.choice(samples)
+# Ambiguous characters (0/O, 1/I/L, 5/S, 2/Z, 8/B) are excluded so legitimate users can read the code.
+CAPTCHA_ALPHABET = "ACDEFGHJKMNPQRTUVWXY34679"
+CAPTCHA_FONTS = (
+    "arialbd.ttf", "verdanab.ttf", "georgiab.ttf", "trebucbd.ttf", "timesbd.ttf", "courbd.ttf",
+    "DejaVuSans-Bold.ttf", "DejaVuSerif-Bold.ttf",
+)
 
-    image = Image.new("RGB", (420, 150), color=(246, 246, 246))
+
+def _load_captcha_font(size, rng):
+    fonts = list(CAPTCHA_FONTS)
+    rng.shuffle(fonts)
+    for name in fonts:
+        try:
+            return ImageFont.truetype(name, size)
+        except OSError:
+            continue
+    return ImageFont.load_default()
+
+
+def build_login_challenge():
+    """Generate a fresh random captcha: per-character rotation, mixed fonts, wave warp and noise."""
+    rng = random.SystemRandom()
+    correct_value = "".join(rng.choice(CAPTCHA_ALPHABET) for _ in range(rng.choice((5, 6))))
+
+    width, height = 420, 150
+    image = Image.new("RGB", (width, height), color=(rng.randint(225, 245),) * 3)
     draw = ImageDraw.Draw(image)
 
-    for _ in range(4):
-        x0 = random.randint(20, 380)
-        y0 = random.randint(20, 120)
-        x1 = random.randint(20, 380)
-        y1 = random.randint(20, 120)
-        draw.arc(
-            _ordered_rect(x0, y0, x1, y1),
-            start=random.randint(0, 180),
-            end=random.randint(180, 360),
-            fill=(225, 225, 225),
-            width=1,
+    for _ in range(18):
+        shade = rng.randint(150, 210)
+        draw.line(
+            (rng.randint(0, width), rng.randint(0, height), rng.randint(0, width), rng.randint(0, height)),
+            fill=(shade, shade, shade),
+            width=rng.randint(1, 3),
+        )
+    for _ in range(30):
+        shade = rng.randint(170, 215)
+        draw.ellipse(
+            _ordered_rect(rng.randint(0, width), rng.randint(0, height), rng.randint(0, width), rng.randint(0, height)),
+            fill=(shade, shade, shade),
         )
 
-    for _ in range(12):
-        x0 = random.randint(0, 420)
-        y0 = random.randint(0, 150)
-        x1 = random.randint(0, 420)
-        y1 = random.randint(0, 150)
-        draw.ellipse(_ordered_rect(x0, y0, x1, y1), fill=(214, 214, 214))
+    text_layer = Image.new("RGBA", (width + 80, height + 40), (255, 255, 255, 0))
+    slot = (width - 30) / len(correct_value)
+    for index, char in enumerate(correct_value):
+        size = rng.randint(66, 88)
+        font = _load_captcha_font(size, rng)
+        glyph = Image.new("RGBA", (size + 40, size + 40), (255, 255, 255, 0))
+        dark = rng.randint(0, 60)
+        ImageDraw.Draw(glyph).text(
+            (16, 6), char, font=font, fill=(dark, dark, dark, 255), stroke_width=rng.choice((1, 2)), stroke_fill=(dark, dark, dark, 255)
+        )
+        glyph = glyph.rotate(rng.uniform(-25, 25), resample=Image.BICUBIC, expand=True)
+        text_layer.alpha_composite(
+            glyph, (int(40 + index * slot + rng.randint(-6, 6)), rng.randint(5, 45))
+        )
 
-    try:
-        font = ImageFont.truetype("arial.ttf", 58)
-    except OSError:
-        font = ImageFont.load_default()
+    text_layer = _warp_text_layer(text_layer, rng.randint(8, 12))
+    text_layer = text_layer.resize((width, height), resample=Image.BICUBIC)
+    base = Image.alpha_composite(image.convert("RGBA"), text_layer)
 
-    text_layer = Image.new("RGBA", image.size, (255, 255, 255, 0))
-    text_draw = ImageDraw.Draw(text_layer)
-    text_draw.text((52, 24), correct_value, font=font, fill=(24, 43, 34, 255))
+    overlay = ImageDraw.Draw(base)
+    for _ in range(7):
+        shade = rng.randint(40, 110)
+        points = [(rng.randint(0, width), rng.randint(20, height - 20)) for _ in range(3)]
+        overlay.line(points, fill=(shade, shade, shade, 255), width=rng.randint(2, 3))
+    for _ in range(200):
+        px, py = rng.randint(0, width - 1), rng.randint(0, height - 1)
+        shade = rng.randint(0, 255)
+        overlay.point((px, py), fill=(shade, shade, shade, 255))
 
-    shadow = Image.new("RGBA", image.size, (255, 255, 255, 0))
-    shadow_draw = ImageDraw.Draw(shadow)
-    shadow_draw.text((54, 26), correct_value, font=font, fill=(0, 0, 0, 28))
-
-    text_layer = _warp_text_layer(text_layer, random.randint(4, 7))
-    text_layer = text_layer.rotate(random.uniform(-4, 4), resample=Image.BICUBIC, expand=False)
-    text_layer = text_layer.filter(ImageFilter.SMOOTH)
-
-    overlay = Image.alpha_composite(image.convert("RGBA"), shadow).convert("RGBA")
-    overlay = Image.alpha_composite(overlay, text_layer)
-
-    base = overlay.convert("RGB")
-    base = base.filter(ImageFilter.GaussianBlur(radius=0.05))
+    base = base.convert("RGB").filter(ImageFilter.GaussianBlur(radius=0.6))
 
     buffer = io.BytesIO()
     base.save(buffer, format="PNG")
@@ -92,7 +110,7 @@ def build_login_challenge():
 
     return {
         "correct_value": correct_value,
-        "samples": samples,
+        "samples": [],
         "image_data_url": image_data_url,
     }
 
@@ -110,7 +128,7 @@ class CustomUserChangeForm(UserChangeForm):
 
 
 class BorrowerRegistrationForm(UserCreationForm):
-    """Form for registering new borrowers"""
+    """Form for creating borrower/student accounts."""
 
     email = forms.EmailField(required=True)
     first_name = forms.CharField(required=True)
@@ -139,7 +157,7 @@ class BorrowerRegistrationForm(UserCreationForm):
 
 
 class AdminRegistrationForm(UserCreationForm):
-    """Form for registering new staff or admin users"""
+    """Form for administrators to create user accounts."""
 
     email = forms.EmailField(required=True)
     first_name = forms.CharField(required=True)
@@ -170,6 +188,8 @@ class AdminRegistrationForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.user_type = self.cleaned_data.get("user_type", "borrower")
+        user.is_staff = user.user_type in {"staff", "admin"}
+        user.is_superuser = user.user_type == "admin"
         if commit:
             user.save()
         return user
@@ -188,13 +208,14 @@ class LoginForm(forms.Form):
         )
     )
     password = forms.CharField(
+        required=True,
         widget=forms.PasswordInput(
             attrs={
                 "class": "form-control",
                 "placeholder": "Password",
                 "autocomplete": "current-password",
             }
-        )
+        ),
     )
     captcha = forms.CharField(
         required=False,
@@ -235,9 +256,37 @@ class LoginForm(forms.Form):
         return submitted
 
 
+class AgreementAcceptanceForm(forms.Form):
+    accept_agreement = forms.BooleanField(
+        label="I have read and accept the user agreement and applicable SOPs.",
+        required=True,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+
 class ProfileUpdateForm(forms.ModelForm):
     """Form for updating user profile"""
 
     class Meta:
         model = User
-        fields = ("first_name", "last_name", "email", "phone", "address", "date_of_birth")
+        fields = (
+            "first_name",
+            "last_name",
+            "email",
+            "phone",
+            "address",
+            "date_of_birth",
+            "photo",
+        )
+
+    photo = forms.ImageField(required=False)
+
+    def clean_photo(self):
+        photo = self.cleaned_data.get("photo")
+        if photo:
+            max_size = int(getattr(settings, "MAX_PROFILE_PHOTO_SIZE_MB", 5)) * 1024 * 1024
+            if photo.size > max_size:
+                raise forms.ValidationError(
+                    f"Profile photos must be no larger than {max_size // (1024 * 1024)} MB."
+                )
+        return photo

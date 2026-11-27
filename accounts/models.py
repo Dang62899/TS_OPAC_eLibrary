@@ -6,8 +6,9 @@ class User(AbstractUser):
     """Extended User model for library system"""
 
     USER_TYPES = (
-        ("borrower", "Borrower"),
+        ("borrower", "Borrower / Student"),
         ("staff", "Staff"),
+        ("admin_staff", "Admin Staff"),
         ("admin", "Administrator"),
     )
 
@@ -21,6 +22,11 @@ class User(AbstractUser):
     max_items_allowed = models.IntegerField(default=5)
     otp_secret = models.CharField(max_length=64, blank=True, default="")
     two_factor_enabled = models.BooleanField(default=False)
+    # User agreement acceptance
+    agreed_to_terms = models.BooleanField(default=False)
+    agreed_at = models.DateTimeField(null=True, blank=True)
+    # Profile picture
+    photo = models.ImageField(upload_to="profiles/", null=True, blank=True)
 
     class Meta:
         ordering = ["username"]
@@ -28,9 +34,17 @@ class User(AbstractUser):
     def __str__(self):
         return f"{self.get_full_name()} ({self.username})"
 
+    @property
+    def is_library_admin(self):
+        return self.user_type in {"admin", "admin_staff"}
+
+    @property
+    def is_library_staff(self):
+        return self.user_type in {"staff", "admin", "admin_staff"}
+
     def can_borrow(self):
         """Check if user can borrow items"""
-        if self.is_blocked:
+        if self.is_blocked or self.user_type != "borrower":
             return False
         from circulation.models import Loan
 

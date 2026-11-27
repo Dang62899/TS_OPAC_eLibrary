@@ -68,6 +68,8 @@ class CheckoutForm(forms.ModelForm):
             if not borrower.can_borrow():
                 if borrower.is_blocked:
                     raise forms.ValidationError(f"Borrower is blocked: {borrower.block_reason}")
+                elif borrower.user_type != "borrower":
+                    raise forms.ValidationError("Only borrower accounts may check out items.")
                 else:
                     raise forms.ValidationError(
                         f"Borrower has reached maximum loan limit ({borrower.max_items_allowed})"

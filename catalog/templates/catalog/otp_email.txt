@@ -1,0 +1,14 @@
+Hello,
+
+You requested access to download "{{ attachment.publication.title }}" from the Elibrary.
+
+Your one-time download code is: {{ otp.code }}
+
+This code expires at {{ otp.expires_at }} UTC.
+
+Use it on the Elibrary download confirmation page to retrieve the file.
+
+If you did not request this, please contact the library administrators.
+
+Regards,
+Elibrary Team

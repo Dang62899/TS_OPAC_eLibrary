@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}Resource Access Monitor - {{ ELIBRARY_NAME }}{% endblock %}
+
+{% block content %}
+<h1>Resource Access Monitor</h1>
+<p class="text-muted">Who viewed, played, or downloaded each resource, newest first.</p>
+
+<div class="row g-3 mb-3 text-center">
+    <div class="col-6 col-md-3"><div class="card"><div class="card-body"><div class="h4 mb-0">{{ summary.total }}</div><div class="small text-muted">Events</div></div></div></div>
+    <div class="col-6 col-md-3"><div class="card"><div class="card-body"><div class="h4 mb-0">{{ summary.downloads }}</div><div class="small text-muted">Downloads</div></div></div></div>
+    <div class="col-6 col-md-3"><div class="card"><div class="card-body"><div class="h4 mb-0">{{ summary.plays }}</div><div class="small text-muted">Video plays</div></div></div></div>
+    <div class="col-6 col-md-3"><div class="card"><div class="card-body"><div class="h4 mb-0">{{ summary.users }}</div><div class="small text-muted">Distinct users</div></div></div></div>
+</div>
+
+<form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-12 col-md-3">
+        <label class="form-label" for="log-search">User or resource</label>
+        <input id="log-search" type="search" name="q" class="form-control" value="{{ search }}">
+    </div>
+    <div class="col-6 col-md-2">
+        <label class="form-label" for="log-action">Action</label>
+        <select id="log-action" name="action" class="form-select">
+            <option value="">All actions</option>
+            {% for value, label in action_choices %}
+            <option value="{{ value }}" {% if action == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-6 col-md-2">
+        <label class="form-label" for="log-format">File type</label>
+        <select id="log-format" name="format" class="form-select">
+            <option value="">All types</option>
+            {% for value in format_choices %}
+            <option value="{{ value }}" {% if file_format == value %}selected{% endif %}>{{ value|upper }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-6 col-md-2">
+        <label class="form-label" for="log-from">From</label>
+        <input id="log-from" type="date" name="date_from" class="form-control" value="{{ date_from }}">
+    </div>
+    <div class="col-6 col-md-2">
+        <label class="form-label" for="log-to">To</label>
+        <input id="log-to" type="date" name="date_to" class="form-control" value="{{ date_to }}">
+    </div>
+    <div class="col-12 col-md-1 d-grid">
+        <button type="submit" class="btn btn-primary">Filter</button>
+    </div>
+</form>
+
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a href="{% url 'circulation:resource_access_log' %}" class="btn btn-outline-secondary btn-sm">Clear filters</a>
+    <a href="?{% if query_string %}{{ query_string }}&{% endif %}export=csv" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-download"></i> Export CSV
+    </a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Resource</th>
+                <th>Type</th>
+                <th>IP address</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in page_obj %}
+            <tr>
+                <td>{{ log.timestamp|date:"M d, Y H:i:s" }}</td>
+                <td>{{ log.username_snapshot|default:"anonymous" }}</td>
+                <td>
+                    <span class="badge {% if log.action == 'download' %}bg-danger{% elif log.action == 'play' %}bg-info{% else %}bg-secondary{% endif %}">{{ log.get_action_display }}</span>
+                </td>
+                <td>
+                    {% if log.publication_id %}<a href="{% url 'catalog:publication_detail' log.publication_id %}">{{ log.resource_label }}</a>{% else %}{{ log.resource_label }}{% endif %}
+                </td>
+                <td>{{ log.file_format|upper|default:"-" }}</td>
+                <td>{{ log.ip_address|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center text-muted">No matching activity recorded yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if page_obj.has_other_pages %}
+<nav aria-label="Access log pages">
+    <ul class="pagination justify-content-center flex-wrap">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a></li>
+        {% endif %}
+        <li class="page-item active"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{% url 'circulation:reports' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Reports
+    </a>
+</div>
+{% endblock %}

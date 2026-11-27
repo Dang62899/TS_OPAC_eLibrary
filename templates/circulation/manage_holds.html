@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Manage Holds - e-Library{% endblock %}
+{% block title %}Manage Holds - {{ ELIBRARY_NAME }}{% endblock %}
 
 {% block content %}
 <h1>Manage Holds</h1>
@@ -51,9 +51,10 @@
                         <td>{{ hold.queue_position }}</td>
                         <td>{{ hold.pickup_location }}</td>
                         <td>
-                            <a href="{% url 'circulation:set_hold_ready' hold.id %}" class="btn btn-sm btn-success">
-                                Set Ready
-                            </a>
+                            <form method="post" action="{% url 'circulation:set_hold_ready' hold.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-success">Set Ready</button>
+                            </form>
                         </td>
                     </tr>
                     {% endfor %}

@@ -1,33 +1,50 @@
-import random
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import build_login_challenge
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login as auth_login, authenticate
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import SetPasswordForm
 from django.contrib import messages
 from django.core.cache import cache
-from django.http import HttpResponse
 from django.core.paginator import Paginator
 from django.db.models import Q
-from .forms import AdminRegistrationForm, BorrowerRegistrationForm, ProfileUpdateForm, LoginForm
+from .forms import (
+    AdminRegistrationForm,
+    AgreementAcceptanceForm,
+    LoginForm,
+    ProfileUpdateForm,
+)
 from .decorators import admin_required, staff_or_admin_required
 from circulation.models import Loan, Hold
 from .models import User
 from .security import AccountSecurityManager, TwoFactorAuthManager
+from django.utils import timezone
+
+
+@login_required
+def user_agreement(request):
+    """Display the user agreement and record acceptance."""
+    form = AgreementAcceptanceForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        # Record acceptance
+        request.user.agreed_to_terms = True
+        request.user.agreed_at = timezone.now()
+        request.user.save(update_fields=["agreed_to_terms", "agreed_at"])
+        messages.success(request, "Thank you for accepting the user agreement.")
+        return redirect("catalog:index")
+
+    # Agreement text can be stored in docs or settings; keep a short placeholder here
+    agreement_text = "By using this Elibrary you agree to abide by the terms of use and SOPs."
+    return render(
+        request,
+        "accounts/user_agreement.html",
+        {"agreement_text": agreement_text, "form": form},
+    )
 
 
 def custom_login(request):
     """Custom login view with CAPTCHA and optional TOTP-based two-factor authentication."""
     if request.user.is_authenticated:
-        if request.user.user_type == "admin":
-            return redirect("circulation:admin_dashboard")
-        elif request.user.user_type == "staff":
-            return redirect("circulation:staff_dashboard")
-        else:
-            return redirect("accounts:my_account")
-
-    auth_method = request.POST.get("auth_method", "") if request.method == "POST" else ""
-    passkey_mode = auth_method == "passkey"
+        return redirect("catalog:index")
 
     if request.method == "POST":
         form = LoginForm(request.POST, request=request)
@@ -45,7 +62,6 @@ def custom_login(request):
                 {
                     "form": form,
                     "requires_2fa": False,
-                    "passkey_mode": False,
                     "captcha_value": request.session.get("login_captcha_value"),
                     "captcha_prompt": request.session.get("login_captcha_prompt", "Enter the code shown in the image."),
                     "captcha_options": request.session.get("login_captcha_options", []),
@@ -53,43 +69,26 @@ def custom_login(request):
             )
 
         if form.is_valid():
-            user = authenticate(request, username=form.cleaned_data["username"], password=form.cleaned_data["password"])
+            user = authenticate(
+                request,
+                username=form.cleaned_data["username"],
+                password=form.cleaned_data["password"],
+            )
             if user is None:
                 if username:
                     AccountSecurityManager.record_failed_login(username)
                 messages.error(request, "Invalid username or password.")
             else:
-                auth_method = request.POST.get("auth_method")
-                is_passkey_flow = auth_method == "passkey"
-
-                if is_passkey_flow:
-                    if not user.otp_secret:
-                        messages.error(request, "This account has no authenticator secret. Please set up Google Authenticator in your profile first.")
-                        return render(
-                            request,
-                            "accounts/login.html",
-                            {
-                                "form": form,
-                                "requires_2fa": True,
-                                "passkey_mode": True,
-                                "username": user.username,
-                                "captcha_value": request.session.get("login_captcha_value"),
-                                "captcha_prompt": request.session.get("login_captcha_prompt", "Enter the code shown in the image."),
-                                "captcha_options": request.session.get("login_captcha_options", []),
-                            },
-                        )
-
+                if user.two_factor_enabled:
                     if not form.cleaned_data.get("totp_code"):
                         cache.set(f"pending_2fa_{user.id}", True, 300)
-                        messages.info(request, "Please enter your Google Authenticator code to continue.")
+                        messages.info(request, "Please enter your authenticator code to continue.")
                         return render(
                             request,
                             "accounts/login.html",
                             {
                                 "form": form,
                                 "requires_2fa": True,
-                                "passkey_mode": True,
-                                "auth_method": "passkey",
                                 "username": user.username,
                                 "captcha_value": request.session.get("login_captcha_value"),
                                 "captcha_prompt": request.session.get("login_captcha_prompt", "Enter the code shown in the image."),
@@ -98,15 +97,13 @@ def custom_login(request):
                         )
 
                     if not TwoFactorAuthManager.verify_totp(user, form.cleaned_data["totp_code"]):
-                        messages.error(request, "Invalid Google Authenticator code.")
+                        messages.error(request, "Invalid authenticator code.")
                         return render(
                             request,
                             "accounts/login.html",
                             {
                                 "form": form,
                                 "requires_2fa": True,
-                                "passkey_mode": True,
-                                "auth_method": "passkey",
                                 "username": user.username,
                                 "captcha_value": request.session.get("login_captcha_value"),
                                 "captcha_prompt": request.session.get("login_captcha_prompt", "Enter the code shown in the image."),
@@ -116,62 +113,15 @@ def custom_login(request):
 
                     cache.delete(f"pending_2fa_{user.id}")
 
-                else:
-                    if user.user_type in ["staff", "admin"] and getattr(user, "two_factor_enabled", False):
-                        if not form.cleaned_data.get("totp_code"):
-                            cache.set(f"pending_2fa_{user.id}", True, 300)
-                            messages.info(request, "Please enter your authenticator code to continue.")
-                            return render(
-                                request,
-                                "accounts/login.html",
-                                {
-                                    "form": form,
-                                    "requires_2fa": True,
-                                    "auth_method": auth_method,
-                                    "username": user.username,
-                                    "captcha_value": request.session.get("login_captcha_value"),
-                                    "captcha_prompt": request.session.get("login_captcha_prompt", "Enter the code shown in the image."),
-                                    "captcha_options": request.session.get("login_captcha_options", []),
-                                },
-                            )
-
-                        if not TwoFactorAuthManager.verify_totp(user, form.cleaned_data["totp_code"]):
-                            messages.error(request, "Invalid authenticator code.")
-                            return render(
-                                request,
-                                "accounts/login.html",
-                                {
-                                    "form": form,
-                                    "requires_2fa": True,
-                                    "auth_method": auth_method,
-                                    "username": user.username,
-                                    "captcha_value": request.session.get("login_captcha_value"),
-                                    "captcha_prompt": request.session.get("login_captcha_prompt", "Enter the code shown in the image."),
-                                    "captcha_options": request.session.get("login_captcha_options", []),
-                                },
-                            )
-
-                        cache.delete(f"pending_2fa_{user.id}")
-
                 auth_login(request, user)
                 AccountSecurityManager.clear_failed_attempts(user.username)
-
-                next_url = request.GET.get("next")
-                if next_url:
-                    return redirect(next_url)
-
-                if user.user_type == "admin":
-                    return redirect("circulation:admin_dashboard")
-                elif user.user_type == "staff":
-                    return redirect("circulation:staff_dashboard")
-                else:
-                    return redirect("accounts:my_account")
+                return redirect("catalog:index")
         else:
             messages.error(request, "Please correct the highlighted errors.")
     else:
         challenge = build_login_challenge()
         request.session["login_captcha_value"] = challenge["correct_value"]
-        request.session["login_captcha_prompt"] = "Enter the distorted text shown in the image."
+        request.session["login_captcha_prompt"] = "Complete the security check."
         request.session["login_captcha_options"] = challenge["samples"]
         request.session["login_captcha_image"] = challenge["image_data_url"]
         form = LoginForm(request=request)
@@ -182,10 +132,8 @@ def custom_login(request):
         {
             "form": form,
             "requires_2fa": False,
-            "passkey_mode": passkey_mode,
-            "auth_method": auth_method,
             "captcha_value": request.session.get("login_captcha_value"),
-            "captcha_prompt": request.session.get("login_captcha_prompt", "Enter the distorted text shown in the image."),
+            "captcha_prompt": request.session.get("login_captcha_prompt", "Complete the security check."),
             "captcha_options": request.session.get("login_captcha_options", []),
             "captcha_image": request.session.get("login_captcha_image"),
         },
@@ -195,7 +143,7 @@ def custom_login(request):
 @login_required
 def setup_two_factor(request):
     """Enable or disable TOTP-based two-factor authentication for the current user."""
-    if request.user.user_type not in ["staff", "admin", "borrower"]:
+    if request.user.user_type not in ["staff", "admin_staff", "admin", "borrower"]:
         messages.error(request, "Two-factor authentication is not available for this account type.")
         return redirect("accounts:profile")
 
@@ -224,7 +172,7 @@ def setup_two_factor(request):
 @login_required
 def disable_two_factor(request):
     """Disable TOTP-based two-factor authentication for the current user."""
-    if request.user.user_type not in ["staff", "admin", "borrower"]:
+    if request.user.user_type not in ["staff", "admin_staff", "admin", "borrower"]:
         messages.error(request, "Two-factor authentication is not available for this account type.")
         return redirect("accounts:profile")
 
@@ -252,26 +200,20 @@ def disable_two_factor(request):
     return render(request, "accounts/setup_2fa.html", context)
 
 
+@login_required
+@admin_required
 def register(request):
-    """Register a new user"""
-    if request.method == "POST":
-        if request.user.is_authenticated and request.user.user_type == "admin":
-            form = AdminRegistrationForm(request.POST, allowed_types=["staff", "admin"])
-        else:
-            form = BorrowerRegistrationForm(request.POST)
-
-        if form.is_valid():
-            form.save()
-            if request.user.is_authenticated and request.user.user_type == "admin":
-                messages.success(request, "New user has been created successfully.")
-                return redirect("accounts:manage_users")
-            messages.success(request, "Your account has been created! You can now log in.")
-            return redirect("accounts:login")
-    else:
-        if request.user.is_authenticated and request.user.user_type == "admin":
-            form = AdminRegistrationForm(allowed_types=["staff", "admin"])
-        else:
-            form = BorrowerRegistrationForm()
+    """Create accounts for borrowers/students and administrative roles."""
+    allowed_types = (
+        ["borrower"]
+        if request.user.user_type == "admin_staff"
+        else ["borrower", "staff", "admin_staff", "admin"]
+    )
+    form = AdminRegistrationForm(request.POST or None, allowed_types=allowed_types)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "New user has been created successfully.")
+        return redirect("accounts:manage_users")
     return render(request, "accounts/register.html", {"form": form})
 
 
@@ -285,7 +227,7 @@ def profile(request):
 def edit_profile(request):
     """Edit user profile"""
     if request.method == "POST":
-        form = ProfileUpdateForm(request.POST, instance=request.user)
+        form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Your profile has been updated!")
@@ -340,6 +282,8 @@ def manage_users(request):
     users = User.objects.all().order_by("-date_joined")
     search_query = request.GET.get("search", "")
     user_type_filter = request.GET.get("user_type", "")
+    if request.user.user_type == "admin_staff":
+        users = users.filter(is_superuser=False)
 
     if search_query:
         users = users.filter(
@@ -366,14 +310,19 @@ def manage_users(request):
 
 
 @login_required
-@admin_required
+@staff_or_admin_required
 def edit_user(request, user_id):
-    """Admin only - Edit any user"""
-    user = get_object_or_404(User, id=user_id)
+    """Staff can edit borrower profiles; admins can edit managed accounts."""
+    users = User.objects.all()
+    if request.user.user_type == "staff":
+        users = users.filter(user_type="borrower")
+    elif request.user.user_type == "admin_staff":
+        users = users.filter(is_superuser=False)
+    user = get_object_or_404(users, id=user_id)
     if request.method == "POST":
-        form = ProfileUpdateForm(request.POST, instance=user)
+        form = ProfileUpdateForm(request.POST, request.FILES, instance=user)
         if form.is_valid():
-            form.save()
+            user = form.save()
             messages.success(request, f"User {user.username} has been updated!")
             return redirect("accounts:manage_users")
     else:
@@ -382,10 +331,33 @@ def edit_user(request, user_id):
 
 
 @login_required
+@staff_or_admin_required
+def reset_user_password(request, user_id):
+    """Allow staff/admin to set a new password for a managed user."""
+    users = User.objects.all()
+    if request.user.user_type == "staff":
+        users = users.filter(user_type="borrower")
+    elif request.user.user_type == "admin_staff":
+        users = users.filter(is_superuser=False)
+    user = get_object_or_404(users, id=user_id)
+    form = SetPasswordForm(user, request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, f"Password reset for {user.username}. Share the temporary password securely.")
+        return redirect("accounts:manage_users")
+    return render(request, "accounts/reset_user_password.html", {"form": form, "user_obj": user})
+
+
+@login_required
 @admin_required
 def delete_user(request, user_id):
-    """Admin only - Delete a user"""
-    user = get_object_or_404(User, id=user_id)
+    """Allow app admins to delete non-superuser accounts."""
+    users = User.objects.all()
+    if request.user.user_type == "admin_staff":
+        users = users.filter(is_superuser=False)
+    user = get_object_or_404(users, id=user_id)
+    if user.pk == request.user.pk:
+        return redirect("accounts:manage_users")
     if request.method == "POST":
         username = user.username
         user.delete()

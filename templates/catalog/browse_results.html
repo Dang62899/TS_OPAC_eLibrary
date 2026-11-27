@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Browse - {{ browse_title }} - e-Library{% endblock %}
+{% block title %}Browse - {{ browse_title }} - {{ ELIBRARY_NAME }}{% endblock %}
 
 {% block content %}
 <nav aria-label="breadcrumb">
@@ -16,6 +16,30 @@
     <p class="lead text-muted">{{ browse_description }}</p>
     {% endif %}
 </div>
+
+{% if active_filters %}
+<form method="get" class="row g-3 align-items-end mb-4" aria-label="Research paper filters">
+    <div class="col-sm-4 col-lg-3">
+        <label for="research-year" class="form-label">Research year</label>
+        <select id="research-year" name="year" class="form-select">
+            <option value="">All years</option>
+            {% for year in research_years %}
+            <option value="{{ year }}" {% if active_filters.year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-sm-5 col-lg-4">
+        <label for="research-class" class="form-label">Class</label>
+        <input id="research-class" type="search" name="class" class="form-control" value="{{ active_filters.class }}" list="research-class-options">
+        <datalist id="research-class-options">
+            {% for class_name in research_classes %}<option value="{{ class_name }}">{% endfor %}
+        </datalist>
+    </div>
+    <div class="col-sm-3 col-lg-2">
+        <button class="btn btn-primary w-100" type="submit">Filter</button>
+    </div>
+</form>
+{% endif %}
 
 <div class="row">
     {% for publication in page_obj %}
@@ -80,7 +104,7 @@
     <ul class="pagination justify-content-center">
         {% if page_obj.has_previous %}
         <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if active_filters %}&year={{ active_filters.year|urlencode }}&class={{ active_filters.class|urlencode }}{% endif %}">
                 <i class="bi bi-chevron-left"></i> Previous
             </a>
         </li>
@@ -98,7 +122,7 @@
         
         {% if page_obj.has_next %}
         <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if active_filters %}&year={{ active_filters.year|urlencode }}&class={{ active_filters.class|urlencode }}{% endif %}">
                 Next <i class="bi bi-chevron-right"></i>
             </a>
         </li>

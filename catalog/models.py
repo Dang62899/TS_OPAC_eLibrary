@@ -1,8 +1,11 @@
+import os
+
 from django.db import models
 from django.utils import timezone
 from django.urls import reverse
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
+from django.utils.crypto import constant_time_compare
 
 
 class PublicationType(models.Model):
@@ -96,6 +99,9 @@ class Publication(models.Model):
     summary = models.TextField(blank=True)
     cover_image = models.ImageField(upload_to="covers/", blank=True, null=True)
     call_number = models.CharField(max_length=100, blank=True)
+    # Research paper metadata
+    research_year = models.IntegerField(null=True, blank=True)
+    research_class = models.CharField(max_length=64, blank=True)
 
     # Metadata
     date_added = models.DateTimeField(auto_now_add=True)
@@ -363,3 +369,130 @@ class ReadingProgress(models.Model):
     def get_progress_percentage(self):
         """Get reading progress as percentage"""
         return self.percentage_complete
+
+
+class Attachment(models.Model):
+    """File or link attached to a publication: presentation, curriculum, SOP, video"""
+
+    ATTACHMENT_TYPES = [
+        ("presentation", "Presentation"),
+        ("curriculum", "Curriculum"),
+        ("unit_briefing", "Unit Briefing"),
+        ("sop", "Signed SOP"),
+        ("video", "Instructional Video"),
+        ("other", "Other"),
+    ]
+
+    publication = models.ForeignKey(Publication, on_delete=models.CASCADE, related_name="attachments")
+    attachment_type = models.CharField(max_length=32, choices=ATTACHMENT_TYPES, default="other")
+    file = models.FileField(upload_to="attachments/", null=True, blank=True)
+    is_external = models.BooleanField(default=False)
+    external_url = models.URLField(blank=True)
+    allow_download = models.BooleanField(default=True)
+    download_password_hash = models.CharField(max_length=256, blank=True, editable=False)
+    uploader = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    upload_date = models.DateTimeField(auto_now_add=True)
+    year = models.IntegerField(null=True, blank=True)
+    class_field = models.CharField(max_length=64, blank=True)
+    unit = models.CharField(max_length=128, blank=True)
+    merge_first_two_pages = models.BooleanField(default=False)
+    description = models.TextField(blank=True)
+    duration_seconds = models.PositiveIntegerField(null=True, blank=True)
+    tags = models.CharField(max_length=500, blank=True)
+
+    def check_download_password(self, raw_password):
+        return constant_time_compare(raw_password or "", settings.DOWNLOAD_PASSWORD)
+
+    @property
+    def has_download_password(self):
+        return True
+
+    @property
+    def file_type_label(self):
+        """Short label such as PDF, Video, Presentation or Link for display."""
+        if self.is_external:
+            return "Video Link" if self.attachment_type == "video" else "Link"
+        ext = os.path.splitext(self.file.name or "")[1].lower().lstrip(".")
+        labels = {
+            "pdf": "PDF",
+            "ppt": "PowerPoint", "pptx": "PowerPoint",
+            "doc": "Word", "docx": "Word",
+            "xls": "Excel", "xlsx": "Excel",
+            "mp4": "Video", "mov": "Video", "avi": "Video", "mkv": "Video", "webm": "Video",
+            "mp3": "Audio", "wav": "Audio",
+            "jpg": "Image", "jpeg": "Image", "png": "Image",
+            "zip": "Archive",
+        }
+        return labels.get(ext) or (ext.upper() if ext else "File")
+
+    class Meta:
+        ordering = ["-upload_date"]
+
+    def __str__(self):
+        return f"{self.publication.title} - {self.get_attachment_type_display()}"
+
+
+class ViewLog(models.Model):
+    """Audit trail of who viewed, played, or downloaded which resource."""
+
+    ACTION_CHOICES = [
+        ("page_view", "Viewed page"),
+        ("preview", "Previewed"),
+        ("play", "Played video"),
+        ("download", "Downloaded"),
+        ("access", "Accessed (legacy)"),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    publication = models.ForeignKey(Publication, on_delete=models.SET_NULL, null=True, blank=True)
+    attachment = models.ForeignKey(Attachment, on_delete=models.SET_NULL, null=True, blank=True)
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES, default="page_view", db_index=True)
+    username_snapshot = models.CharField(max_length=150, blank=True)
+    resource_label = models.CharField(max_length=500, blank=True)
+    file_format = models.CharField(max_length=20, blank=True, db_index=True)
+    ip_address = models.CharField(max_length=45, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-timestamp"]
+
+    def save(self, *args, **kwargs):
+        # Snapshots keep the audit row readable after the user or file is deleted.
+        if self.user_id and not self.username_snapshot:
+            self.username_snapshot = self.user.username
+        if not self.resource_label:
+            if self.attachment_id:
+                self.resource_label = (
+                    f"{self.attachment.publication.title} - {self.attachment.get_attachment_type_display()}"
+                )[:500]
+            elif self.publication_id:
+                self.resource_label = self.publication.title[:500]
+        if self.attachment_id and not self.file_format:
+            if self.attachment.is_external:
+                self.file_format = "link"
+            elif self.attachment.file:
+                self.file_format = os.path.splitext(self.attachment.file.name)[1].lstrip(".").lower()[:20]
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        who = self.username_snapshot or "anonymous"
+        return f"{who} {self.get_action_display().lower()} {self.resource_label} at {self.timestamp.isoformat()}"
+
+
+class DownloadOTP(models.Model):
+    """One-time password for protected downloads"""
+
+    attachment = models.ForeignKey(Attachment, on_delete=models.CASCADE, related_name="otps")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    code = models.CharField(max_length=16)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def is_valid(self):
+        from django.utils import timezone
+
+        return (not self.used) and (self.expires_at > timezone.now())

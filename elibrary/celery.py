@@ -36,4 +36,8 @@ app.conf.beat_schedule = {
         "task": "circulation.tasks.check_expiring_holds",
         "schedule": crontab(hour=11, minute=0),  # Run daily at 11 AM
     },
+    "purge-expired-view-logs-daily": {
+        "task": "catalog.tasks.purge_expired_view_logs",
+        "schedule": crontab(hour=2, minute=0),  # Keep audit records for configured retention period
+    },
 }

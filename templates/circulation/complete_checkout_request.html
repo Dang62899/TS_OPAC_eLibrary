@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Complete Checkout Request - e-Library{% endblock %}
+{% block title %}Complete Checkout Request - {{ ELIBRARY_NAME }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -28,7 +28,6 @@
                     </div>
                         <!-- Barcode scanner is disabled. Use Item ID selection. -->
                         <p class="mb-0"><strong>Borrower Notes:</strong> {{ checkout_request.notes }}</p>
-                        {% endif %}
                     </div>
 
                     <hr>

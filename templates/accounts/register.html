@@ -1,32 +1,32 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
-{% block title %}Register - e-Library{% endblock %}
+{% block title %}Create Account - {{ ELIBRARY_NAME }}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card">
             <div class="card-header bg-primary text-white">
-                <h3 class="mb-0">Register for Library Account</h3>
+            <h3 class="mb-0">Create Library Account</h3>
             </div>
             <div class="card-body">
-                {% if user.is_authenticated and user.user_type == 'admin' %}
+            {% if user.user_type == 'admin_staff' %}
+            <div class="alert alert-info">
+                <strong>Admin Staff mode:</strong> Create borrower/student accounts using the form below.
+            </div>
+            {% elif user.user_type == 'admin' %}
                 <div class="alert alert-info">
-                    <strong>Admin mode:</strong> Create a new staff or admin user using the form below.
+                <strong>Admin mode:</strong> Create borrower/student and administrative accounts using the form below.
                 </div>
                 {% endif %}
                 <form method="post">
                     {% csrf_token %}
                     {{ form|crispy }}
                     <div class="d-grid gap-2 mt-3">
-                        <button type="submit" class="btn btn-primary btn-lg">Register</button>
+                    <button type="submit" class="btn btn-primary btn-lg">Create account</button>
                     </div>
                 </form>
-                <hr>
-                {% if not user.is_authenticated %}
-                <p class="text-center mb-0">Already have an account? <a href="{% url 'accounts:login' %}">Login here</a></p>
-                {% endif %}
             </div>
         </div>
     </div>

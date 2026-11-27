@@ -3,15 +3,69 @@ Django management command to apply database optimizations and indices.
 Usage: python manage.py optimize_database
 """
 
-from django.core.management.base import BaseCommand, CommandError
-from django.db import connection, DEFAULT_DB_ALIAS
-import logging
-
-logger = logging.getLogger(__name__)
+from django.core.management.base import BaseCommand
+from django.db import connection
 
 
 class Command(BaseCommand):
     help = 'Optimize database with indices, analyze queries, and apply performance improvements'
+
+    recommended_indices = (
+        {
+            'name': 'idx_loan_status_due_date',
+            'table': 'circulation_loan',
+            'sql': 'CREATE INDEX IF NOT EXISTS idx_loan_status_due_date ON circulation_loan(status, due_date);',
+            'description': 'Optimize loan queries by status and due date',
+        },
+        {
+            'name': 'idx_item_publication_status',
+            'table': 'catalog_item',
+            'sql': 'CREATE INDEX IF NOT EXISTS idx_item_publication_status ON catalog_item(publication_id, status);',
+            'description': 'Optimize item queries by publication and status',
+        },
+        {
+            'name': 'idx_loan_borrower_status',
+            'table': 'circulation_loan',
+            'sql': 'CREATE INDEX IF NOT EXISTS idx_loan_borrower_status ON circulation_loan(borrower_id, status);',
+            'description': 'Optimize user dashboard loan queries',
+        },
+        {
+            'name': 'idx_user_active_type',
+            'table': 'accounts_user',
+            'sql': 'CREATE INDEX IF NOT EXISTS idx_user_active_type ON accounts_user(is_active, user_type);',
+            'description': 'Optimize admin user filtering',
+        },
+        {
+            'name': 'idx_publication_search',
+            'table': 'catalog_publication',
+            'sql': 'CREATE INDEX IF NOT EXISTS idx_publication_search ON catalog_publication(title, isbn);',
+            'description': 'Optimize publication search queries',
+        },
+        {
+            'name': 'idx_item_location',
+            'table': 'catalog_item',
+            'sql': 'CREATE INDEX IF NOT EXISTS idx_item_location ON catalog_item(location_id);',
+            'description': 'Optimize item location queries',
+        },
+        {
+            'name': 'idx_hold_publication_status',
+            'table': 'circulation_hold',
+            'sql': 'CREATE INDEX IF NOT EXISTS idx_hold_publication_status ON circulation_hold(publication_id, status);',
+            'description': 'Optimize hold queries',
+        },
+        {
+            'name': 'idx_loan_item',
+            'table': 'circulation_loan',
+            'sql': 'CREATE INDEX IF NOT EXISTS idx_loan_item ON circulation_loan(item_id);',
+            'description': 'Optimize item loan lookups',
+        },
+        {
+            'name': 'idx_notification_borrower',
+            'table': 'circulation_notification',
+            'sql': 'CREATE INDEX IF NOT EXISTS idx_notification_borrower ON circulation_notification(borrower_id, is_read);',
+            'description': 'Optimize notification queries',
+        },
+    )
     
     def add_arguments(self, parser):
         parser.add_argument(
@@ -59,73 +113,11 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('\n[1/2] Creating Database Indices...'))
         self.stdout.write('-' * 80)
         
-        indices = [
-            # High Priority Indices
-            {
-                'name': 'idx_loan_status_due_date',
-                'table': 'circulation_loan',
-                'sql': 'CREATE INDEX IF NOT EXISTS idx_loan_status_due_date ON circulation_loan(status, due_date);',
-                'description': 'Optimize loan queries by status and due date',
-            },
-            {
-                'name': 'idx_item_publication_status',
-                'table': 'catalog_item',
-                'sql': 'CREATE INDEX IF NOT EXISTS idx_item_publication_status ON catalog_item(publication_id, status);',
-                'description': 'Optimize item queries by publication and status',
-            },
-            {
-                'name': 'idx_loan_borrower_status',
-                'table': 'circulation_loan',
-                'sql': 'CREATE INDEX IF NOT EXISTS idx_loan_borrower_status ON circulation_loan(borrower_id, status);',
-                'description': 'Optimize user dashboard loan queries',
-            },
-            
-            # Medium Priority Indices
-            {
-                'name': 'idx_user_active_type',
-                'table': 'accounts_user',
-                'sql': 'CREATE INDEX IF NOT EXISTS idx_user_active_type ON accounts_user(is_active, user_type);',
-                'description': 'Optimize admin user filtering',
-            },
-            {
-                'name': 'idx_publication_search',
-                'table': 'catalog_publication',
-                'sql': 'CREATE INDEX IF NOT EXISTS idx_publication_search ON catalog_publication(title, isbn);',
-                'description': 'Optimize publication search queries',
-            },
-            {
-                'name': 'idx_item_location',
-                'table': 'catalog_item',
-                'sql': 'CREATE INDEX IF NOT EXISTS idx_item_location ON catalog_item(location_id);',
-                'description': 'Optimize item location queries',
-            },
-            
-            # Additional Indices
-            {
-                'name': 'idx_hold_publication_status',
-                'table': 'circulation_hold',
-                'sql': 'CREATE INDEX IF NOT EXISTS idx_hold_publication_status ON circulation_hold(publication_id, status);',
-                'description': 'Optimize hold queries',
-            },
-            {
-                'name': 'idx_loan_item',
-                'table': 'circulation_loan',
-                'sql': 'CREATE INDEX IF NOT EXISTS idx_loan_item ON circulation_loan(item_id);',
-                'description': 'Optimize item loan lookups',
-            },
-            {
-                'name': 'idx_notification_user',
-                'table': 'circulation_notification',
-                'sql': 'CREATE INDEX IF NOT EXISTS idx_notification_user ON circulation_notification(user_id, is_read);',
-                'description': 'Optimize notification queries',
-            },
-        ]
-        
         success_count = 0
         failed_count = 0
         
         with connection.cursor() as cursor:
-            for idx in indices:
+            for idx in self.recommended_indices:
                 try:
                     cursor.execute(idx['sql'])
                     self.stdout.write(
@@ -162,6 +154,13 @@ class Command(BaseCommand):
             self.stdout.write(
                 style(f"  {table:<35} {size_info['rows']:>8} rows ({size_mb:>6.2f} MB)")
             )
+
+        self.stdout.write(self.style.SUCCESS('\nMissing Indices:'))
+        if analysis['missing_indices']:
+            for index_name in analysis['missing_indices']:
+                self.stdout.write(f"  {index_name}")
+        else:
+            self.stdout.write('  None')
         
         # Report optimization recommendations
         self.stdout.write(self.style.SUCCESS('\nOptimization Recommendations:'))
@@ -175,20 +174,22 @@ class Command(BaseCommand):
         """Get sizes of all tables."""
         sizes = {}
         with connection.cursor() as cursor:
-            # For SQLite
             try:
-                cursor.execute("""
-                    SELECT name FROM sqlite_master 
-                    WHERE type='table' AND name NOT LIKE 'sqlite_%'
-                """)
-                tables = [row[0] for row in cursor.fetchall()]
-                
+                tables = connection.introspection.table_names(cursor)
                 for table in tables:
-                    cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                    quoted_table = connection.ops.quote_name(table)
+                    cursor.execute(f"SELECT COUNT(*) FROM {quoted_table}")
                     row_count = cursor.fetchone()[0]
+                    if connection.vendor == 'postgresql':
+                        cursor.execute(
+                            'SELECT pg_total_relation_size(%s::regclass)', [table]
+                        )
+                        size_kb = cursor.fetchone()[0] / 1024
+                    else:
+                        size_kb = row_count * 2
                     sizes[table] = {
                         'rows': row_count,
-                        'size_kb': row_count * 2,  # Rough estimate
+                        'size_kb': size_kb,
                     }
             except Exception as e:
                 self.stdout.write(self.style.WARNING(f"Could not get table sizes: {e}"))
@@ -196,12 +197,19 @@ class Command(BaseCommand):
         return sizes
     
     def get_missing_indices(self):
-        """Identify potentially missing indices."""
-        return [
-            'idx_loan_status_due_date',
-            'idx_item_publication_status',
-            'idx_loan_borrower_status',
-        ]
+        """Identify recommended indices that are absent from the active database."""
+        missing_indices = []
+        with connection.cursor() as cursor:
+            tables = set(connection.introspection.table_names(cursor))
+            for index in self.recommended_indices:
+                table = index['table']
+                if table not in tables:
+                    missing_indices.append(index['name'])
+                    continue
+                constraints = connection.introspection.get_constraints(cursor, table)
+                if index['name'] not in constraints:
+                    missing_indices.append(index['name'])
+        return missing_indices
     
     def get_slow_query_patterns(self):
         """Identify patterns that could benefit from optimization."""

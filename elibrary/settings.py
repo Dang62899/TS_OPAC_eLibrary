@@ -5,6 +5,7 @@ Django settings for elibrary project.
 from pathlib import Path
 import os
 import logging
+import warnings
 
 # Load environment variables from .env or .env.production
 try:
@@ -34,6 +35,19 @@ class WellKnownFilter(logging.Filter):
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Suppress upstream deprecation warnings from the current Django and pypdf dependency versions
+# so the project remains clean while preserving runtime behavior.
+warnings.filterwarnings(
+    "ignore",
+    message=r".*FORMS_URLFIELD_ASSUME_HTTPS.*",
+    category=DeprecationWarning,
+)
+warnings.filterwarnings(
+    "ignore",
+    message=r".*PageObject\.replace_contents\(\).*",
+    category=DeprecationWarning,
+)
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -41,12 +55,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-your-secret-key-here-change-in-production")
 
 # DEBUG controlled by env var. Default True for development, False for production
-# Force True for development server access
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "True").lower() in ("1", "true", "yes")
 
 # Parse allowed hosts from environment variable
 ALLOWED_HOSTS_ENV = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,[::1],testserver")
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(",")]
+
+# Render injects the public hostname of the web service
+RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "")
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # Determine production mode: DEBUG=False means production (overrides ENVIRONMENT variable)
 # When DEBUG=True, production security settings are always disabled
@@ -55,6 +73,7 @@ ELIBRARY_PRODUCTION = (not DEBUG) and os.environ.get("ENVIRONMENT", "") == "prod
 # Production security settings (applied only in production mode)
 if ELIBRARY_PRODUCTION:
     # Secure cookies and SSL
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "True") == "True"
     SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "True") == "True"
     CSRF_COOKIE_SECURE = os.environ.get("CSRF_COOKIE_SECURE", "True") == "True"
@@ -137,10 +156,12 @@ else:
     ])
 
 MIDDLEWARE.extend([
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "accounts.middleware.RequireAgreementMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # Metrics collection middleware (always enabled)
@@ -272,6 +293,8 @@ CSRF_TRUSTED_ORIGINS = [
 CSRF_TRUSTED_ORIGINS.extend(
     [domain.strip() for domain in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if domain.strip()]
 )
+if RENDER_EXTERNAL_HOSTNAME:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -290,9 +313,19 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+MAX_ATTACHMENT_SIZE_MB = int(os.environ.get("MAX_ATTACHMENT_SIZE_MB", "50"))
+# One shared password unlocks every downloadable resource; override via environment if needed.
+DOWNLOAD_PASSWORD = os.environ.get("DOWNLOAD_PASSWORD", "eLib@2026")
+MAX_PROFILE_PHOTO_SIZE_MB = int(os.environ.get("MAX_PROFILE_PHOTO_SIZE_MB", "5"))
+VIEW_LOG_RETENTION_DAYS = int(os.environ.get("VIEW_LOG_RETENTION_DAYS", "365"))
+DOWNLOAD_OTP_TIMEOUT_MINUTES = int(os.environ.get("DOWNLOAD_OTP_TIMEOUT_MINUTES", "15"))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -317,8 +350,8 @@ LOGOUT_ALLOWED_NEXT_URL = "catalog:index"
 # Session Configuration
 # Use database sessions with inactivity timeout
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
-# Session timeout: 2 minutes (120 seconds) for testing - change to 1800 (30 min) for production
-SESSION_COOKIE_AGE = 120
+# Session timeout defaults to 30 minutes and can be overridden per environment.
+SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", "1800"))
 # Invalidate session when user closes browser (optional - set to False for persistent sessions)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # Set session cookie to secure in production only
@@ -360,6 +393,10 @@ CELERY_TIMEZONE = TIME_ZONE
 
 # Library Settings
 LIBRARY_NAME = "Digital e-Library"
+# Final branding values
+ELIBRARY_NAME = os.environ.get("ELIBRARY_NAME", "TS eLibrary")
+# Static path under STATICFILES_DIRS.
+ELIBRARY_LOGO = os.environ.get("ELIBRARY_LOGO", "images/9532_training_squadron_seal.png")
 MAX_ITEMS_PER_BORROWER = 5
 LOAN_PERIOD_DAYS = 14
 RENEWAL_LIMIT = 2

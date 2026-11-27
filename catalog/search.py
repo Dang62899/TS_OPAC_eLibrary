@@ -9,7 +9,7 @@ class AdvancedSearch:
     """Advanced search engine with boolean operators, phrases, filters, and facets."""
 
     @staticmethod
-    def _build_term_query(term):
+    def _build_term_query(term, search_in="all"):
         if not term:
             return Q()
 
@@ -17,7 +17,7 @@ class AdvancedSearch:
         if not search_term:
             return Q()
 
-        return (
+        all_fields_query = (
             Q(title__icontains=search_term)
             | Q(subtitle__icontains=search_term)
             | Q(abstract__icontains=search_term)
@@ -29,9 +29,20 @@ class AdvancedSearch:
             | Q(isbn__icontains=search_term)
             | Q(publication_type__name__icontains=search_term)
         )
+        field_queries = {
+            "all": all_fields_query,
+            "title": Q(title__icontains=search_term) | Q(subtitle__icontains=search_term),
+            "author": Q(authors__first_name__icontains=search_term)
+            | Q(authors__last_name__icontains=search_term),
+            "subject": Q(subjects__name__icontains=search_term),
+            "call_number": Q(call_number__icontains=search_term),
+            "isbn": Q(isbn__icontains=search_term),
+            "description": Q(abstract__icontains=search_term) | Q(summary__icontains=search_term),
+        }
+        return field_queries.get(search_in, all_fields_query)
 
     @staticmethod
-    def _parse_boolean_query(query):
+    def _parse_boolean_query(query, search_in="all"):
         normalized_query = (query or "").strip()
         if not normalized_query:
             return None
@@ -58,7 +69,7 @@ class AdvancedSearch:
 
         combined_query = None
         for operator, term in clauses:
-            term_query = AdvancedSearch._build_term_query(term)
+            term_query = AdvancedSearch._build_term_query(term, search_in)
             if combined_query is None:
                 combined_query = term_query
             elif operator == "AND":
@@ -71,17 +82,19 @@ class AdvancedSearch:
         return combined_query
 
     @staticmethod
-    def full_text_search(query):
+    def full_text_search(query, search_in="all"):
         """Perform full-text search across publication fields with boolean support."""
         normalized_query = (query or "").strip()
         if not normalized_query:
             return Publication.objects.none()
 
-        boolean_query = AdvancedSearch._parse_boolean_query(normalized_query)
+        boolean_query = AdvancedSearch._parse_boolean_query(normalized_query, search_in)
         if boolean_query is not None:
             return Publication.objects.filter(boolean_query).distinct()
 
-        return Publication.objects.filter(AdvancedSearch._build_term_query(normalized_query)).distinct()
+        return Publication.objects.filter(
+            AdvancedSearch._build_term_query(normalized_query, search_in)
+        ).distinct()
 
     @staticmethod
     def filter_by_date_range(queryset, start_date=None, end_date=None):
@@ -184,9 +197,10 @@ class AdvancedSearch:
         sort_by="relevance",
         limit=None,
         location=None,
+        search_in="all",
     ):
         if query:
-            queryset = AdvancedSearch.full_text_search(query)
+            queryset = AdvancedSearch.full_text_search(query, search_in)
         else:
             queryset = Publication.objects.all()
 

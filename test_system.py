@@ -2,25 +2,31 @@
 # -*- coding: utf-8 -*-
 """
 Comprehensive System Test Suite
-Tests all critical functionality after publication type correction
+Tests all critical functionality after publication type correction.
+This module is intended as a direct-run script, not a pytest-discovered test module.
 """
+import io
 import os
 import sys
-import django
-import io
 
-# Fix Windows encoding issue
-if sys.platform == 'win32':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+__test__ = False
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'elibrary.settings')
-django.setup()
 
-from catalog.models import PublicationType, Publication, Item, Author, Subject, Location
-from circulation.models import Hold, CheckoutRequest
-from accounts.models import User
+if __name__ == '__main__':
+    # Fix Windows encoding issue only when the script is run directly.
+    if sys.platform == 'win32':
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-def test_1_database_integrity():
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'elibrary.settings')
+
+    import django
+    django.setup()
+
+    from accounts.models import User
+    from catalog.models import Author, Item, Location, Publication, PublicationType, Subject
+    from circulation.models import CheckoutRequest, Hold
+
+def check_1_database_integrity():
     """Test 1: Database Integrity"""
     print("\n[TEST 1] DATABASE INTEGRITY")
     print("=" * 80)
@@ -56,7 +62,7 @@ def test_1_database_integrity():
     return True
 
 
-def test_2_publication_types():
+def check_2_publication_types():
     """Test 2: Publication Types Compliance"""
     print("[TEST 2] PUBLICATION TYPES COMPLIANCE")
     print("=" * 80)
@@ -79,7 +85,7 @@ def test_2_publication_types():
     return True
 
 
-def test_3_search_functionality():
+def check_3_search_functionality():
     """Test 3: Search Functionality"""
     print("[TEST 3] SEARCH FUNCTIONALITY")
     print("=" * 80)
@@ -107,7 +113,7 @@ def test_3_search_functionality():
     return True
 
 
-def test_4_circulation_features():
+def check_4_circulation_features():
     """Test 4: Circulation Features"""
     print("[TEST 4] CIRCULATION FEATURES")
     print("=" * 80)
@@ -125,7 +131,7 @@ def test_4_circulation_features():
     return True
 
 
-def test_5_relationships():
+def check_5_relationships():
     """Test 5: Model Relationships"""
     print("[TEST 5] MODEL RELATIONSHIPS")
     print("=" * 80)
@@ -154,11 +160,11 @@ def run_all_tests():
     print("=" * 80)
     
     tests = [
-        test_1_database_integrity,
-        test_2_publication_types,
-        test_3_search_functionality,
-        test_4_circulation_features,
-        test_5_relationships,
+        check_1_database_integrity,
+        check_2_publication_types,
+        check_3_search_functionality,
+        check_4_circulation_features,
+        check_5_relationships,
     ]
     
     results = []

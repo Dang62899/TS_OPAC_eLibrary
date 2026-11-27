@@ -1,27 +1,31 @@
 {% extends 'base.html' %}
 
-{% block title %}My Account - e-Library{% endblock %}
+{% block title %}My Account - {{ ELIBRARY_NAME }}{% endblock %}
 
 {% block content %}
-<h1>My Account</h1>
-<p class="lead">Welcome, {{ user.get_full_name }}!</p>
+<header class="mb-4">
+    <h1 class="h2 mb-1">My library account</h1>
+    <p class="text-muted mb-0">Welcome, {{ user.get_full_name|default:user.username }}.</p>
+</header>
 
 <div class="row">
     <div class="col-md-4">
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Account Information</h5>
-                <p><strong>Username:</strong> {{ user.username }}</p>
-                <p><strong>Email:</strong> {{ user.email }}</p>
-                <p><strong>Card Number:</strong> {{ user.library_card_number|default:"N/A" }}</p>
-                <p><strong>Active Loans:</strong> {{ user.get_active_loans_count }} / {{ user.max_items_allowed }}</p>
-                <a href="{% url 'accounts:edit_profile' %}" class="btn btn-primary btn-sm">Edit Profile</a>
+                <h2 class="h5 card-title">Account summary</h2>
+                <dl class="row mb-3">
+                    <dt class="col-5 text-muted">Username</dt><dd class="col-7">{{ user.username }}</dd>
+                    <dt class="col-5 text-muted">Email</dt><dd class="col-7">{{ user.email|default:"Not provided" }}</dd>
+                    <dt class="col-5 text-muted">Library card</dt><dd class="col-7">{{ user.library_card_number|default:"Not assigned" }}</dd>
+                    <dt class="col-5 text-muted">Active loans</dt><dd class="col-7">{{ user.get_active_loans_count }} / {{ user.max_items_allowed }}</dd>
+                </dl>
+                <a href="{% url 'accounts:edit_profile' %}" class="btn btn-primary btn-sm">Edit profile</a>
             </div>
         </div>
     </div>
 
     <div class="col-md-8">
-        <h3>Current Loans</h3>
+        <h2 class="h4">Current loans</h2>
         {% if active_loans %}
         <div class="table-responsive">
             <table class="table table-striped">
@@ -48,7 +52,10 @@
                         </td>
                         <td>
                             {% if loan.can_renew %}
-                                <a href="{% url 'circulation:renew_loan_online' loan.id %}" class="btn btn-sm btn-success">Renew</a>
+                                <form method="post" action="{% url 'circulation:renew_loan_online' loan.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-success">Renew</button>
+                                </form>
                             {% else %}
                                 <span class="text-muted small">Cannot renew</span>
                             {% endif %}
@@ -62,7 +69,7 @@
         <p class="text-muted">No active loans</p>
         {% endif %}
 
-        <h3 class="mt-4">Active Holds</h3>
+        <h2 class="h4 mt-4">Active holds</h2>
         {% if active_holds %}
         <div class="table-responsive">
             <table class="table table-striped">
@@ -109,7 +116,10 @@
                                     <small><i class="bi bi-info-circle"></i> Come to {{ hold.pickup_location }} to pick up your book!</small>
                                 </div>
                             {% endif %}
-                            <a href="{% url 'circulation:cancel_hold' hold.id %}" class="btn btn-sm btn-danger">Cancel</a>
+                            <form method="post" action="{% url 'circulation:cancel_hold' hold.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
+                            </form>
                         </td>
                     </tr>
                     {% endfor %}
@@ -120,7 +130,7 @@
         <p class="text-muted">No active holds</p>
         {% endif %}
 
-        <h3 class="mt-4">Checkout Requests</h3>
+        <h2 class="h4 mt-4">Checkout requests</h2>
         {% if checkout_requests %}
         <div class="table-responsive">
             <table class="table table-striped">
@@ -178,7 +188,7 @@
         <p class="text-muted">No active checkout requests</p>
         {% endif %}
 
-        <h3 class="mt-4">Loan History</h3>
+        <h2 class="h4 mt-4">Loan history</h2>
         {% if loan_history %}
         <div class="table-responsive">
             <table class="table table-sm">

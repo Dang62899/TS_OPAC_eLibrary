@@ -89,6 +89,7 @@ else
     echo ""
     echo "Please set up SSL certificates before proceeding"
     echo ""
+    exit 1
 fi
 echo ""
 
@@ -99,24 +100,49 @@ echo -e "${YELLOW}Step 5: Verifying configuration...${NC}"
 
 # Check critical variables
 CRITICAL_VARS=("DJANGO_SECRET_KEY" "DB_PASSWORD" "EMAIL_HOST_USER" "EMAIL_HOST_PASSWORD" "ALLOWED_HOSTS")
+CONFIG_VALID=true
 
 for var in "${CRITICAL_VARS[@]}"; do
     value=$(grep "^${var}=" .env.production | cut -d'=' -f2-)
-    if [[ "$value" == *"change-me"* ]] || [ -z "$value" ]; then
+    normalized_value=$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')
+     if [[ "$normalized_value" == *"change-me"* ]] || [[ "$normalized_value" == *"changeme"* ]] || \
+         [[ "$normalized_value" == *"your-domain"* ]] || \
+       [[ "$normalized_value" == *"your-email"* ]] || [[ "$normalized_value" == *"your-app-password"* ]] || [ -z "$value" ]; then
         echo -e "${RED}✗ $var not configured properly${NC}"
+        CONFIG_VALID=false
     else
         echo -e "${GREEN}✓ $var configured${NC}"
     fi
+    if [ "$var" = "DJANGO_SECRET_KEY" ] && [ "${#value}" -lt 50 ]; then
+        echo -e "${RED}✗ DJANGO_SECRET_KEY must be at least 50 characters${NC}"
+        CONFIG_VALID=false
+    fi
 done
 echo ""
+
+if [ "$CONFIG_VALID" != true ]; then
+    echo -e "${RED}Production configuration is incomplete. No containers were changed.${NC}"
+    exit 1
+fi
+
+if grep -q '\$' .env.production; then
+    echo -e "${RED}Environment values contain '$' characters that Docker Compose may interpolate.${NC}"
+    echo "Rotate or safely escape those values before deployment. No containers were changed."
+    exit 1
+fi
+
+if ! docker compose --env-file .env.production config --quiet; then
+    echo -e "${RED}Docker Compose configuration is invalid. No containers were changed.${NC}"
+    exit 1
+fi
 
 # ============================================================================
 # Step 6: Start Docker containers
 # ============================================================================
 echo -e "${YELLOW}Step 6: Starting Docker containers...${NC}"
 
-docker-compose down 2>/dev/null || true
-docker-compose up -d
+docker compose --env-file .env.production down 2>/dev/null || true
+docker compose --env-file .env.production up -d
 
 # Wait for containers to be ready
 echo "Waiting for containers to start..."
@@ -130,9 +156,9 @@ echo ""
 # ============================================================================
 echo -e "${YELLOW}Step 7: Running database migrations...${NC}"
 
-docker-compose exec -T web python manage.py migrate --settings=elibrary.settings_production || {
+docker compose --env-file .env.production exec -T web python manage.py migrate --settings=elibrary.settings_production || {
     echo -e "${RED}✗ Migrations failed${NC}"
-    echo "Check: docker-compose logs web"
+    echo "Check: docker compose --env-file .env.production logs web"
     exit 1
 }
 
@@ -144,7 +170,7 @@ echo ""
 # ============================================================================
 echo -e "${YELLOW}Step 8: Collecting static files...${NC}"
 
-docker-compose exec -T web python manage.py collectstatic --noinput --settings=elibrary.settings_production
+docker compose --env-file .env.production exec -T web python manage.py collectstatic --noinput --settings=elibrary.settings_production
 
 echo -e "${GREEN}✓ Static files collected${NC}"
 echo ""
@@ -154,7 +180,7 @@ echo ""
 # ============================================================================
 echo -e "${YELLOW}Step 9: Setting up superuser...${NC}"
 echo "Run the following command to create a superuser:"
-echo "docker-compose exec web python manage.py createsuperuser --settings=elibrary.settings_production"
+echo "docker compose --env-file .env.production exec web python manage.py createsuperuser --settings=elibrary.settings_production"
 echo ""
 
 # ============================================================================
@@ -166,13 +192,13 @@ echo -e "${YELLOW}Step 10: Running health checks...${NC}"
 sleep 5
 
 echo "Checking application health..."
-HEALTH_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/health/ 2>/dev/null || echo "000")
+HEALTH_RESPONSE=$(curl --insecure --silent --output /dev/null --write-out "%{http_code}" https://localhost/health 2>/dev/null || echo "000")
 
 if [ "$HEALTH_RESPONSE" = "200" ]; then
     echo -e "${GREEN}✓ Application is healthy (HTTP $HEALTH_RESPONSE)${NC}"
 else
     echo -e "${YELLOW}⚠ Application health check returned HTTP $HEALTH_RESPONSE${NC}"
-    echo "Check: docker-compose logs web"
+    echo "Check: docker compose --env-file .env.production logs web"
 fi
 echo ""
 
@@ -190,11 +216,11 @@ echo "   - Configure email settings"
 echo "   - Set SENTRY_DSN if using error tracking"
 echo ""
 echo "2. Create superuser (if not done):"
-echo "   docker-compose exec web python manage.py createsuperuser --settings=elibrary.settings_production"
+echo "   docker compose --env-file .env.production exec web python manage.py createsuperuser --settings=elibrary.settings_production"
 echo ""
 echo "3. Verify deployment:"
-echo "   docker-compose ps              # Check container status"
-echo "   docker-compose logs -f web     # View application logs"
+echo "   docker compose --env-file .env.production ps              # Check container status"
+echo "   docker compose --env-file .env.production logs -f web     # View application logs"
 echo "   curl https://localhost/        # Test application"
 echo ""
 echo "4. Set up monitoring:"

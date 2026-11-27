@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="card mx-auto" style="max-width: 38rem;">
+    <div class="card-body">
+      <h1 class="h4">Access code for {{ attachment.get_attachment_type_display }}</h1>
+      <p class="text-muted">Resource: {{ attachment.publication.title }}</p>
+      <p class="mb-1">Enter this one-time code in the resource list to download the file:</p>
+      <p class="display-6 fw-semibold" aria-label="One-time access code">{{ code }}</p>
+      <p class="small text-muted">Expires {{ expires|date:"M d, Y g:i A" }}. Do not share this code.</p>
+      <a class="btn btn-primary" href="{% url 'catalog:publication_detail' attachment.publication_id %}">Return to resource</a>
+    </div>
+  </div>
+{% endblock %}

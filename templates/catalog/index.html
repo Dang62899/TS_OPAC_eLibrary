@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Home - e-Library{% endblock %}
+{% block title %}Home - {{ ELIBRARY_NAME }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -13,96 +13,46 @@
 {% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8">
-        <h1>Welcome to e-Library</h1>
-        <p class="lead">Your digital library for Manuals, SOPs, Capstone Projects, and TTPs</p>
-        
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Search the Catalog</h5>
-                <form action="{% url 'catalog:search' %}" method="get">
-                    <div class="input-group">
-                        <input type="text" name="query" class="form-control" placeholder="Search for publications...">
-                        <button class="btn btn-primary" type="submit">
-                            <i class="bi bi-search"></i> Search
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+<div class="mb-4">
+    <h1>Welcome to {{ ELIBRARY_NAME }}</h1>
+    <p class="lead">Your digital library for Manuals, SOPs, Capstone Projects, and TTPs</p>
+</div>
 
-        <h3>📚 Recently Added Publications</h3>
-        <div class="row">
-            {% for publication in recent_publications %}
-            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                <div class="card h-100 book-card shadow-sm" style="transition: all 0.3s ease; border: none; overflow: hidden;">
-                    {% if publication.cover_image %}
-                    <div class="position-relative" style="background: #f8f9fa; min-height: 280px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                        <img src="{{ publication.cover_image.url }}" alt="{{ publication.title }}" style="max-width: 100%; max-height: 280px; object-fit: contain; padding: 10px;">
-                        <div class="position-absolute top-0 end-0 m-2">
-                            <span class="badge bg-success">New</span>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="card-img-top bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 280px; display: flex; align-items: center; justify-content: center; color: white;">
-                        <div class="text-center">
-                            <i class="bi bi-book" style="font-size: 3rem; opacity: 0.8;"></i>
-                            <p class="mt-2 small">No Cover</p>
-                        </div>
-                    </div>
-                    {% endif %}
-                    <div class="card-body d-flex flex-column">
-                        <h6 class="card-title" style="min-height: 2.5em;">
-                            <a href="{% url 'catalog:publication_detail' publication.id %}" class="text-decoration-none">
-                                {{ publication.title|truncatewords:6 }}
-                            </a>
-                        </h6>
-                        <p class="card-text text-muted small mb-2" style="min-height: 1.5em;">
-                            <small>{{ publication.get_authors_display|truncatewords:2 }}</small>
-                        </p>
-                        <p class="card-text mb-2">
-                            <span class="badge bg-primary small">{{ publication.publication_type.code }}</span>
-                        </p>
-                        {% if publication.publication_date %}
-                        <p class="card-text small text-muted mb-2">📅 {{ publication.publication_date.year }}</p>
-                        {% endif %}
-                        <p class="card-text small mt-auto">
-                            {% if publication.is_available %}
-                                <span class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> In Stock</span>
-                            {% else %}
-                                <span class="text-warning"><i class="bi bi-exclamation-circle"></i> Reserved</span>
-                            {% endif %}
-                        </p>
-                        <a href="{% url 'catalog:publication_detail' publication.id %}" class="btn btn-sm btn-outline-primary mt-2">View Details</a>
-                    </div>
+{% if user.is_authenticated %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="{% url 'catalog:search' %}" method="get" role="search">
+                <div class="input-group">
+                    <input type="search" name="query" class="form-control" placeholder="Search for publications..." aria-label="Search publications">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="bi bi-search"></i> Search
+                    </button>
                 </div>
-            </div>
-            {% empty %}
-            <div class="alert alert-info col-12">No publications available yet.</div>
-            {% endfor %}
+            </form>
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card mb-3">
-            <div class="card-header bg-primary text-white">
-                Browse by Type
-            </div>
-            <ul class="list-group list-group-flush">
-                {% for pub_type in publication_types %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <a href="{% url 'catalog:browse_by_type' pub_type.id %}">{{ pub_type.name }}</a>
-                    <span class="badge bg-primary rounded-pill">{{ pub_type.pub_count }}</span>
-                </li>
-                {% empty %}
-                <li class="list-group-item">No types available</li>
-                {% endfor %}
-            </ul>
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            Browse by Type
         </div>
+        <ul class="list-group list-group-flush">
+            {% for pub_type in publication_types %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <a href="{% url 'catalog:browse_by_type' pub_type.id %}">{{ pub_type.name }}</a>
+                <span class="badge bg-primary rounded-pill">{{ pub_type.pub_count }}</span>
+            </li>
+            {% empty %}
+            <li class="list-group-item">No types available</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
 
-        <!-- Library Statistics Charts -->
-        <div class="card mb-3">
+<h2 class="h3 mb-3">Monitoring Matrix</h2>
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card h-100">
             <div class="card-header bg-info text-white">
                 <i class="bi bi-bar-chart"></i> Publication Types Distribution
             </div>
@@ -110,8 +60,9 @@
                 <canvas id="publicationTypesChart" height="200"></canvas>
             </div>
         </div>
-
-        <div class="card mb-3">
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
             <div class="card-header bg-success text-white">
                 <i class="bi bi-pie-chart"></i> Availability Status
             </div>
@@ -119,20 +70,7 @@
                 <canvas id="availabilityChart" height="200"></canvas>
             </div>
         </div>
-
-        {% if user.is_authenticated %}
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                My Account
-            </div>
-            <div class="card-body">
-                <p><strong>Active Loans:</strong> {{ user.get_active_loans_count }}</p>
-                <a href="{% url 'accounts:my_account' %}" class="btn btn-success btn-sm">View My Account</a>
-            </div>
-        </div>
-        {% endif %}
     </div>
-
 </div>
 {% endblock %}
 
@@ -201,31 +139,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Availability Status Chart
     const availCtx = document.getElementById('availabilityChart');
     if (availCtx) {
-        // Calculate available vs unavailable counts
-        let availableCount = 0;
-        let unavailableCount = 0;
-        
-        const publicationItems = document.querySelectorAll('.card .card-text');
-        publicationItems.forEach(item => {
-            if (item.textContent.includes('Available')) {
-                availableCount++;
-            } else if (item.textContent.includes('Not Available')) {
-                unavailableCount++;
-            }
-        });
-
-        // If no publications, use default data
-        if (availableCount + unavailableCount === 0) {
-            availableCount = {{ publication_types|length|default:"0" }};
-            unavailableCount = 2;
-        }
-
         new Chart(availCtx, {
             type: 'doughnut',
             data: {
                 labels: ['Available', 'Not Available'],
                 datasets: [{
-                    data: [availableCount, unavailableCount],
+                    data: [{{ available_item_count }}, {{ unavailable_item_count }}],
                     backgroundColor: [
                         '#198754',
                         '#dc3545'

@@ -105,6 +105,13 @@ class Hold(models.Model):
 
     publication = models.ForeignKey(Publication, on_delete=models.CASCADE, related_name="holds")
     borrower = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="holds")
+    reserved_item = models.ForeignKey(
+        Item,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reserved_for_holds",
+    )
     hold_date = models.DateTimeField(default=timezone.now)
     ready_date = models.DateTimeField(null=True, blank=True)
     expiry_date = models.DateTimeField(null=True, blank=True)
@@ -138,6 +145,15 @@ class Hold(models.Model):
         ).count()
         self.queue_position = waiting_holds + 1
         self.save()
+
+    def get_queue_position(self):
+        if self.status != "waiting":
+            return self.queue_position
+        return Hold.objects.filter(
+            publication=self.publication,
+            status="waiting",
+            hold_date__lt=self.hold_date,
+        ).count() + 1
 
 
 class InTransit(models.Model):

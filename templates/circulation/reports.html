@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Reports - e-Library{% endblock %}
+{% block title %}Reports - {{ ELIBRARY_NAME }}{% endblock %}
 
 {% block content %}
 <h1>Circulation Reports</h1>
@@ -35,6 +35,16 @@
                 <p class="card-text">Search and view all library borrowers and their status.</p>
                 <p class="fw-bold text-info">{{ blocked_borrowers }} blocked borrowers</p>
                 <a href="{% url 'circulation:borrower_list' %}" class="btn btn-info">View List</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <div class="card border-secondary">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-eye"></i> Resource Access Monitor</h5>
+                <p class="card-text">See who viewed, played, or downloaded each video, document, and presentation.</p>
+                <a href="{% url 'circulation:resource_access_log' %}" class="btn btn-secondary">Open Monitor</a>
             </div>
         </div>
     </div>

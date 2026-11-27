@@ -6,6 +6,7 @@ Tests typical user scenarios: browsing, searching, viewing analytics
 """
 import sys
 import io
+import os
 
 # Fix Windows encoding issue
 if sys.platform == 'win32':
@@ -21,7 +22,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import statistics
 
-BASE_URL = "http://localhost"
+BASE_URL = os.environ.get("LOAD_TEST_BASE_URL", "http://localhost").rstrip("/")
 TIMEOUT = 10
 RESULTS = {
     'homepage': [],
@@ -91,7 +92,7 @@ def test_health_check(thread_id):
     try:
         start = time.time()
         response = requests.get(
-            f"{BASE_URL}/health/",
+            f"{BASE_URL}/api/v1/health/",
             timeout=TIMEOUT
         )
         duration = (time.time() - start) * 1000

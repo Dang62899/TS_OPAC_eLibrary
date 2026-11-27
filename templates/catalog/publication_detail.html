@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ publication.title }} - e-Library{% endblock %}
+{% block title %}{{ publication.title }} - {{ ELIBRARY_NAME }}{% endblock %}
 
 {% block content %}
 <nav aria-label="breadcrumb">
@@ -98,6 +98,106 @@
 
 <hr class="my-4">
 
+{% if attachments %}
+<section aria-labelledby="attachments-heading" class="mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h2 class="h3 mb-1" id="attachments-heading">Digital resources</h2>
+            <p class="text-muted mb-0">Presentations, curricula, SOPs, briefings, and instructional videos.</p>
+        </div>
+        {% if user.is_authenticated and user.is_library_staff %}
+        <a href="{% url 'catalog:upload_attachment' publication.id %}" class="btn btn-outline-primary">
+            <i class="bi bi-cloud-arrow-up me-1" aria-hidden="true"></i> Add resource
+        </a>
+        {% endif %}
+    </div>
+    <div class="list-group">
+        {% for attachment in attachments %}
+        <article class="list-group-item">
+            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                <div>
+                    <h3 class="h6 mb-1">{{ attachment.get_attachment_type_display }} <span class="badge text-bg-secondary ms-1">{{ attachment.file_type_label }}</span></h3>
+                    {% if attachment.description %}<p class="mb-1">{{ attachment.description }}</p>{% endif %}
+                    <div class="small text-muted">
+                        {% if attachment.is_external %}External link{% else %}File{% endif %}
+                        {% if attachment.year %} · {{ attachment.year }}{% endif %}
+                        {% if attachment.class_field %} · {{ attachment.class_field }}{% endif %}
+                        {% if attachment.unit %} · {{ attachment.unit }}{% endif %}
+                        {% if attachment.tags %} · {{ attachment.tags }}{% endif %}
+                        {% if attachment.duration_seconds %} · {{ attachment.duration_seconds }} sec{% endif %}
+                        · Added {{ attachment.upload_date|date:"M d, Y" }}
+                    </div>
+                    {% if attachment.is_external and attachment.external_url %}
+                    <span class="small text-muted">External resource link</span>
+                    {% elif attachment.file %}
+                    <span class="small text-muted">{{ attachment.file.name|cut:"attachments/" }}</span>
+                    {% endif %}
+                    {% if attachment.attachment_type == "video" %}
+                    <div class="mt-2">
+                        {% if attachment.is_external and attachment.external_url and attachment.video_access %}
+                        <a href="{{ attachment.external_url }}" target="_blank" rel="noopener noreferrer">Open instructional video</a>
+                        {% elif attachment.file and attachment.video_access %}
+                        <video controls preload="metadata" style="display:block; max-width:100%; width:560px;">
+                            <source src="{% url 'catalog:stream_attachment' attachment.id %}" type="video/mp4">
+                            Your browser does not support video playback.
+                        </video>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="d-flex flex-wrap align-items-start gap-2">
+                    {% if attachment.file and attachment.file.name|lower|slice:"-4:" == ".pdf" and attachment.preview_access %}
+                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'catalog:preview_merged_attachment' attachment.id %}" target="_blank" rel="noopener">PDF preview</a>
+                    {% endif %}
+                    {% if user.is_authenticated %}
+                        {% if attachment.allow_download %}
+                            {% if attachment.download_password_access %}
+                            <a class="btn btn-sm btn-primary" href="{% url 'catalog:download_attachment' attachment.id %}">
+                                <i class="bi bi-download me-1" aria-hidden="true"></i> Download
+                            </a>
+                            {% elif attachment.has_download_password %}
+                            <form method="post" action="{% url 'catalog:unlock_attachment' attachment.id %}" class="d-flex gap-2">
+                                {% csrf_token %}
+                                <label class="visually-hidden" for="download-password-{{ attachment.id }}">Download password</label>
+                                <input id="download-password-{{ attachment.id }}" class="form-control form-control-sm" type="password" name="password" autocomplete="current-password" placeholder="Download password" required>
+                                <button class="btn btn-sm btn-outline-primary" type="submit">Unlock</button>
+                            </form>
+                            {% else %}
+                            <span class="small text-warning">Download password not configured; contact library staff.</span>
+                            {% endif %}
+                        {% elif attachment.attachment_type == "video" and attachment.video_access %}
+                        <span class="small text-success">Video access granted</span>
+                        {% else %}
+                        <form method="post" action="{% url 'catalog:request_download_otp' attachment.id %}">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-outline-primary" type="submit">Request access code</button>
+                        </form>
+                        <form method="post" action="{% url 'catalog:confirm_attachment_otp' attachment.id %}" class="d-flex gap-2">
+                            {% csrf_token %}
+                            <label class="visually-hidden" for="otp-code-{{ attachment.id }}">Access code</label>
+                            <input id="otp-code-{{ attachment.id }}" class="form-control form-control-sm" type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="6-digit code" required>
+                            <button class="btn btn-sm btn-success" type="submit">Unlock</button>
+                        </form>
+                        {% endif %}
+                    {% else %}
+                    <a class="btn btn-sm btn-outline-primary" href="{% url 'accounts:login' %}?next={{ request.get_full_path|urlencode }}">Log in to access</a>
+                    {% endif %}
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% elif user.is_authenticated and user.is_library_staff %}
+<div class="text-end mb-3">
+    <a href="{% url 'catalog:upload_attachment' publication.id %}" class="btn btn-outline-primary">
+        <i class="bi bi-cloud-arrow-up me-1" aria-hidden="true"></i> Add digital resource
+    </a>
+</div>
+{% endif %}
+
+<hr class="my-4">
+
 <h3>Available Copies</h3>
 <table class="table table-striped">
     <thead>
@@ -167,7 +267,10 @@
                 <i class="bi bi-bookmark-check-fill"></i> <strong>You have an active hold</strong>
                 <p class="mb-0">Queue position: #{{ hold.queue_position }}</p>
                 <p class="mb-0">Hold placed: {{ hold.hold_date|date:"M d, Y" }}</p>
-                <a href="{% url 'circulation:cancel_hold' hold.id %}" class="btn btn-sm btn-danger mt-2">Cancel Hold</a>
+                <form method="post" action="{% url 'circulation:cancel_hold' hold.id %}" class="mt-2">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-danger">Cancel Hold</button>
+                </form>
             </div>
         {% else %}
             <a href="{% url 'circulation:place_hold' publication.id %}" class="btn btn-warning btn-lg">

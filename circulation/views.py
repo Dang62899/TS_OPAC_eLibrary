@@ -2,10 +2,16 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
+from django.core.paginator import Paginator
+from django.http import HttpResponse
+from django.utils.dateparse import parse_date
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.db import transaction
 from django.conf import settings
 from django.db.models import Q, Count
+import csv
 import logging
 from datetime import timedelta
 from .models import Loan, Hold, InTransit, Notification, CheckoutRequest
@@ -18,18 +24,29 @@ from .forms import (
 )
 from django.db.models import F, Value
 from django.db.models.functions import Replace
-from catalog.models import Item, Publication, Location
+from catalog.models import Item, Publication, Location, ViewLog
 from accounts.models import User
 
 
 def is_staff_user(user):
     """Check if user is staff"""
-    return user.is_authenticated and user.user_type in ["staff", "admin"]
+    return user.is_authenticated and user.is_library_staff
 
 
 def is_admin_user(user):
     """Check if user is admin"""
-    return user.is_authenticated and user.user_type == "admin"
+    return user.is_authenticated and user.is_library_admin
+
+
+def _safe_next_url(request, fallback):
+    candidate = request.POST.get("next") or request.GET.get("next")
+    if candidate and url_has_allowed_host_and_scheme(
+        candidate,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return candidate
+    return fallback
 
 
 @login_required
@@ -167,7 +184,7 @@ def circulation_hub(request):
 def checkout(request):
     """Check out an item to a borrower"""
     # Get the 'next' parameter from either POST or GET
-    next_url = request.POST.get('next') or request.GET.get('next') or reverse('circulation:circulation_hub')
+    next_url = _safe_next_url(request, reverse("circulation:circulation_hub"))
     
     if request.method == "POST":
         form = CheckoutForm(request.POST)
@@ -206,7 +223,7 @@ def checkout(request):
 def checkin(request):
     """Check in a returned item"""
     # Get the 'next' parameter from either POST or GET
-    next_url = request.POST.get('next') or request.GET.get('next') or reverse('circulation:circulation_hub')
+    next_url = _safe_next_url(request, reverse("circulation:circulation_hub"))
     
     if request.method == "POST":
         form = CheckinForm(request.POST)
@@ -272,6 +289,7 @@ def checkin(request):
 
 @login_required
 @user_passes_test(is_staff_user)
+@require_POST
 def renew_loan(request, loan_id):
     """Renew a loan (staff interface)"""
     loan = get_object_or_404(Loan, pk=loan_id)
@@ -290,9 +308,14 @@ def renew_loan(request, loan_id):
 
 
 @login_required
+@require_POST
 def renew_loan_online(request, loan_id):
     """Renew a loan (borrower interface)"""
     loan = get_object_or_404(Loan, pk=loan_id, borrower=request.user)
+
+    if not request.user.can_borrow():
+        messages.error(request, "Only eligible borrower accounts may renew loans.")
+        return redirect("accounts:my_account")
 
     if loan.renew():
         # Create renewal notification
@@ -320,6 +343,9 @@ def renew_loan_online(request, loan_id):
 def place_hold(request, publication_id):
     """Place a hold on a publication"""
     publication = get_object_or_404(Publication, pk=publication_id)
+    if not request.user.can_borrow():
+        messages.error(request, "Only eligible borrower accounts may place holds.")
+        return redirect("catalog:publication_detail", pk=publication_id)
 
     # Check if user already has a hold
     existing_hold = Hold.objects.filter(
@@ -362,6 +388,7 @@ def place_hold(request, publication_id):
 
 
 @login_required
+@require_POST
 def cancel_hold(request, hold_id):
     """Cancel a hold"""
     hold = get_object_or_404(Hold, pk=hold_id, borrower=request.user)
@@ -412,6 +439,7 @@ def manage_holds(request):
 
 @login_required
 @user_passes_test(is_staff_user)
+@require_POST
 def set_hold_ready(request, hold_id):
     """Mark a hold as ready for pickup - only if an item is available"""
     hold = get_object_or_404(Hold, pk=hold_id)
@@ -421,7 +449,7 @@ def set_hold_ready(request, hold_id):
         try:
             with transaction.atomic():
                 available_qs = Item.objects.select_for_update().filter(
-                    publication=hold.publication, status__in=["available", "on_hold_shelf"]
+                    publication=hold.publication, status="available"
                 )
                 item = available_qs.first()
                 if not item:
@@ -433,6 +461,7 @@ def set_hold_ready(request, hold_id):
                 item.status = "on_hold_shelf"
                 item.save()
 
+                hold.reserved_item = item
                 hold.status = "ready"
                 hold.ready_date = timezone.now()
                 # Set expiry/pickup-by date for the hold (default 7 days)
@@ -474,35 +503,38 @@ def complete_hold(request, hold_id):
         messages.error(request, "This hold is not ready for pickup.")
         return redirect("circulation:manage_holds")
 
+    if not hold.reserved_item_id:
+        messages.error(request, "This hold has no reserved item. Return it to waiting and set it ready again.")
+        return redirect("circulation:manage_holds")
+
     if request.method == "POST":
         item_identifier = request.POST.get("item_identifier", "").strip()
 
         if not item_identifier:
             messages.error(request, "Please select an item.")
-            available_items = Item.objects.filter(
-                publication=hold.publication, status__in=["available", "on_hold_shelf"]
-            ).select_related("location")
+            available_items = Item.objects.filter(pk=hold.reserved_item_id).select_related("location")
             return render(request, "circulation/complete_hold.html", {"hold": hold, "available_items": available_items})
 
         try:
             # Reserve & create loan atomically
             with transaction.atomic():
+                if str(hold.reserved_item_id) != item_identifier:
+                    messages.error(request, "Select the item reserved for this hold.")
+                    return redirect("circulation:manage_holds")
                 item = Item.objects.select_for_update().get(
-                    id=item_identifier, publication=hold.publication, status__in=["available", "on_hold_shelf"]
+                    id=hold.reserved_item_id,
+                    publication=hold.publication,
+                    status="on_hold_shelf",
                 )
 
-                # Check borrower eligibility
-                if hold.borrower.is_blocked:
-                    messages.error(request, f"{hold.borrower.get_full_name()} is currently blocked from borrowing.")
+                if not hold.borrower.can_borrow():
+                    messages.error(
+                        request,
+                        f"{hold.borrower.get_full_name()} is not currently eligible to borrow.",
+                    )
                     return redirect("circulation:manage_holds")
 
-                if hold.borrower.get_active_loans_count() >= hold.borrower.max_items_allowed:
-                    messages.error(request, f"{hold.borrower.get_full_name()} has reached their borrowing limit.")
-                    return redirect("circulation:manage_holds")
-
-                # Create the loan with default 14-day period
-                loan_period = 14
-                due_date = timezone.now() + timedelta(days=loan_period)
+                due_date = (timezone.now() + timedelta(days=settings.LOAN_PERIOD_DAYS)).date()
 
                 loan = Loan.objects.create(
                     item=item,
@@ -525,9 +557,7 @@ def complete_hold(request, hold_id):
 
         except Item.DoesNotExist:
             messages.error(request, "No available item found for this publication.")
-            available_items = Item.objects.filter(
-                publication=hold.publication, status__in=["available", "on_hold_shelf"]
-            ).select_related("location")
+            available_items = Item.objects.filter(pk=hold.reserved_item_id).select_related("location")
             return render(request, "circulation/complete_hold.html", {"hold": hold, "available_items": available_items})
 
         messages.success(
@@ -630,6 +660,7 @@ def block_borrower(request, user_id):
 
 @login_required
 @user_passes_test(is_staff_user)
+@require_POST
 def unblock_borrower(request, user_id):
     """Unblock a borrower"""
     borrower = get_object_or_404(User, pk=user_id, user_type="borrower")
@@ -764,6 +795,85 @@ def reports(request):
     return render(request, "circulation/reports.html", context)
 
 
+def _csv_safe(value):
+    # Spreadsheet apps execute cells that start with these characters.
+    text = "" if value is None else str(value)
+    return "'" + text if text[:1] in ("=", "+", "-", "@", "\t", "\r") else text
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def resource_access_log(request):
+    """Monitor who viewed, played, or downloaded which resource."""
+    logs = ViewLog.objects.select_related("user", "attachment")
+
+    search = request.GET.get("q", "").strip()
+    action = request.GET.get("action", "").strip()
+    file_format = request.GET.get("format", "").strip().lower()
+    date_from = parse_date(request.GET.get("date_from", ""))
+    date_to = parse_date(request.GET.get("date_to", ""))
+
+    if search:
+        logs = logs.filter(Q(username_snapshot__icontains=search) | Q(resource_label__icontains=search))
+    if action in dict(ViewLog.ACTION_CHOICES):
+        logs = logs.filter(action=action)
+    else:
+        action = ""
+    if file_format:
+        logs = logs.filter(file_format=file_format)
+    if date_from:
+        logs = logs.filter(timestamp__date__gte=date_from)
+    if date_to:
+        logs = logs.filter(timestamp__date__lte=date_to)
+
+    if request.GET.get("export") == "csv":
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="resource-access-log.csv"'
+        writer = csv.writer(response)
+        writer.writerow(["Time", "User", "Action", "Resource", "Format", "IP address"])
+        for log in logs[:10000]:
+            writer.writerow(
+                [
+                    timezone.localtime(log.timestamp).strftime("%Y-%m-%d %H:%M:%S"),
+                    _csv_safe(log.username_snapshot or "anonymous"),
+                    log.get_action_display(),
+                    _csv_safe(log.resource_label),
+                    log.file_format,
+                    log.ip_address,
+                ]
+            )
+        return response
+
+    summary = logs.aggregate(
+        total=Count("id"),
+        downloads=Count("id", filter=Q(action="download")),
+        plays=Count("id", filter=Q(action="play")),
+        previews=Count("id", filter=Q(action="preview")),
+        users=Count("user", distinct=True),
+    )
+    page_obj = Paginator(logs, 50).get_page(request.GET.get("page"))
+    query = request.GET.copy()
+    query.pop("page", None)
+    query.pop("export", None)
+
+    context = {
+        "page_obj": page_obj,
+        "summary": summary,
+        "search": search,
+        "action": action,
+        "file_format": file_format,
+        "date_from": request.GET.get("date_from", "") if date_from else "",
+        "date_to": request.GET.get("date_to", "") if date_to else "",
+        "action_choices": ViewLog.ACTION_CHOICES,
+        "format_choices": ViewLog.objects.exclude(file_format="")
+        .order_by("file_format")
+        .values_list("file_format", flat=True)
+        .distinct(),
+        "query_string": query.urlencode(),
+    }
+    return render(request, "circulation/resource_access_log.html", context)
+
+
 @login_required
 @user_passes_test(is_staff_user)
 def overdue_report(request):
@@ -851,14 +961,21 @@ def notifications_list(request):
 
 
 @login_required
+@require_POST
 def mark_notification_read(request, notification_id):
     """Mark a single notification as read"""
     notification = get_object_or_404(Notification, id=notification_id, borrower=request.user)
     notification.mark_as_read()
 
     # Redirect back to referring page or notifications list
-    next_url = request.GET.get("next", "circulation:notifications_list")
-    return redirect(next_url)
+    next_url = request.POST.get("next", "")
+    if url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return redirect(next_url)
+    return redirect("circulation:notifications_list")
 
 
 @login_required
@@ -906,6 +1023,9 @@ def create_notification(borrower, notification_type, title, message, loan=None, 
 def request_checkout(request, publication_id):
     """Borrower requests to checkout a book"""
     publication = get_object_or_404(Publication, pk=publication_id)
+    if not request.user.can_borrow():
+        messages.error(request, "Only eligible borrower accounts may request checkout.")
+        return redirect("catalog:publication_detail", pk=publication_id)
 
     # Check if user already has an active request
     existing_request = CheckoutRequest.objects.filter(
@@ -1111,6 +1231,10 @@ def complete_checkout_request(request, request_id):
         messages.error(request, "This request must be approved before completing checkout.")
         return redirect("circulation:manage_checkout_requests")
 
+    if not checkout_request.reserved_item_id:
+        messages.error(request, "This request has no reserved item. Re-approve it after reserving a copy.")
+        return redirect("circulation:manage_checkout_requests")
+
     if request.method == "POST":
         # TEMPORARY: Using ISBN instead of barcode (no scanner equipment yet)
         # When barcode scanner is available, uncomment the barcode section below
@@ -1130,32 +1254,28 @@ def complete_checkout_request(request, request_id):
                 },
             )
 
+        if str(checkout_request.reserved_item_id) != item_identifier:
+            messages.error(request, "Select the item reserved for this checkout request.")
+            return redirect("circulation:manage_checkout_requests")
+
         try:
             # Reserve & create loan atomically
             with transaction.atomic():
                 # CURRENT METHOD: Find item by ID (from dropdown selection)
                 item = Item.objects.select_for_update().get(
-                    id=item_identifier,
+                    id=checkout_request.reserved_item_id,
                     publication=checkout_request.publication,
-                    status__in=["available", "on_hold_shelf"],
+                    status="on_hold_shelf",
                 )
 
-                # Check if borrower can borrow
-                if checkout_request.borrower.is_blocked:
+                if not checkout_request.borrower.can_borrow():
                     messages.error(
-                        request, f"{checkout_request.borrower.get_full_name()} is currently blocked from borrowing."
+                        request,
+                        f"{checkout_request.borrower.get_full_name()} is not currently eligible to borrow.",
                     )
                     return redirect("circulation:manage_checkout_requests")
 
-                if checkout_request.borrower.get_active_loans_count() >= checkout_request.borrower.max_items_allowed:
-                    messages.error(
-                        request, f"{checkout_request.borrower.get_full_name()} has reached their borrowing limit."
-                    )
-                    return redirect("circulation:manage_checkout_requests")
-
-                # Create the loan with default 14-day period
-                loan_period = 14  # Default loan period in days
-                due_date = timezone.now() + timedelta(days=loan_period)
+                due_date = (timezone.now() + timedelta(days=settings.LOAN_PERIOD_DAYS)).date()
 
                 loan = Loan.objects.create(
                     item=item,

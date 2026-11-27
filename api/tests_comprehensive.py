@@ -3,12 +3,10 @@ API Tests - TS OPAC eLibrary
 Tests for authentication, publications, loans, holds, and permissions
 """
 
-from django.test import TestCase
 from rest_framework.test import APIClient, APITestCase
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_201_CREATED,
-    HTTP_204_NO_CONTENT,
     HTTP_400_BAD_REQUEST,
     HTTP_401_UNAUTHORIZED,
     HTTP_403_FORBIDDEN,
@@ -25,7 +23,6 @@ from catalog.models import (
     Publisher,
     Location
 )
-from circulation.models import Loan, Hold
 
 User = get_user_model()
 
@@ -72,13 +69,33 @@ class TokenAuthenticationTest(APITestCase):
 
 
 class UserRegistrationTest(APITestCase):
-    """Test user registration"""
+    """Test administrative account creation"""
 
     def setUp(self):
         self.client = APIClient()
+        self.admin = User.objects.create_user(
+            username="registration-admin",
+            password="TestPass123!",
+            user_type="admin",
+            is_staff=True,
+            is_superuser=True,
+            agreed_to_terms=True,
+        )
+        self.client.force_authenticate(user=self.admin)
+
+    def test_anonymous_registration_is_forbidden(self):
+        response = APIClient().post('/api/v1/auth/register/', {
+            'username': 'anonymous-user',
+            'email': 'anonymous@test.local',
+            'password': 'SecurePass123!',
+            'password_confirm': 'SecurePass123!',
+        })
+
+        self.assertIn(response.status_code, [HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN])
+        self.assertFalse(User.objects.filter(username='anonymous-user').exists())
 
     def test_valid_registration(self):
-        """Test successful user registration"""
+        """Test successful administrative borrower creation"""
         response = self.client.post('/api/v1/auth/register/', {
             'username': 'newuser',
             'email': 'newuser@test.local',
@@ -88,8 +105,10 @@ class UserRegistrationTest(APITestCase):
             'last_name': 'Doe'
         })
         self.assertIn(response.status_code, [HTTP_201_CREATED, HTTP_200_OK])
-        # Check user was created
-        self.assertTrue(User.objects.filter(username='newuser').exists())
+        user = User.objects.get(username='newuser')
+        self.assertEqual(user.user_type, 'borrower')
+        self.assertFalse(user.is_staff)
+        self.assertFalse(user.is_superuser)
 
     def test_password_mismatch(self):
         """Test registration with mismatched passwords"""
@@ -271,7 +290,8 @@ class AuthenticatedAPITest(APITestCase):
             username="testuser",
             email="user@test.local",
             password="TestPass123!",
-            user_type="borrower"
+            user_type="borrower",
+            agreed_to_terms=True,
         )
         self.client = APIClient()
         # Get token
@@ -321,14 +341,16 @@ class LoanManagementTest(APITestCase):
             email='borrower@test.local',
             password='TestPass123!',
             user_type='borrower',
-            max_items_allowed=5
+            max_items_allowed=5,
+            agreed_to_terms=True,
         )
 
         cls.staff = User.objects.create_user(
             username='staff',
             email='staff@test.local',
             password='TestPass123!',
-            user_type='staff'
+            user_type='staff',
+            agreed_to_terms=True,
         )
 
         # Create publication infrastructure
@@ -413,7 +435,8 @@ class HoldManagementTest(APITestCase):
             username='borrower2',
             email='borrower2@test.local',
             password='TestPass123!',
-            user_type='borrower'
+            user_type='borrower',
+            agreed_to_terms=True,
         )
 
         # Publication infrastructure
@@ -482,21 +505,24 @@ class PermissionTests(APITestCase):
             username='admin',
             email='admin@test.local',
             password='AdminPass123!',
-            user_type='admin'
+            user_type='admin',
+            agreed_to_terms=True,
         )
 
         cls.staff = User.objects.create_user(
             username='staff2',
             email='staff2@test.local',
             password='StaffPass123!',
-            user_type='staff'
+            user_type='staff',
+            agreed_to_terms=True,
         )
 
         cls.borrower = User.objects.create_user(
             username='borrower3',
             email='borrower3@test.local',
             password='BorrowerPass123!',
-            user_type='borrower'
+            user_type='borrower',
+            agreed_to_terms=True,
         )
 
     def setUp(self):
@@ -558,6 +584,15 @@ class ErrorHandlingTests(APITestCase):
 
     def setUp(self):
         self.client = APIClient()
+        admin = User.objects.create_user(
+            username="error-test-admin",
+            password="TestPass123!",
+            user_type="admin",
+            is_staff=True,
+            is_superuser=True,
+            agreed_to_terms=True,
+        )
+        self.client.force_authenticate(user=admin)
 
     def test_invalid_json(self):
         """Test handling of invalid JSON"""
@@ -619,7 +654,7 @@ class PaginationFilteringTest(APITestCase):
     def test_filtering(self):
         """Test filtering of results"""
         client = APIClient()
-        response = client.get(f'/api/v1/publications/?publication_type=1')
+        response = client.get('/api/v1/publications/?publication_type=1')
         # Endpoint requires authentication
         self.assertIn(response.status_code, [HTTP_200_OK, HTTP_401_UNAUTHORIZED])
 

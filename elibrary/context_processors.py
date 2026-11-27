@@ -8,4 +8,6 @@ def feature_flags(request):
     """
     return {
         "BARCODE_ENABLED": getattr(settings, "BARCODE_ENABLED", False),
+        "ELIBRARY_NAME": getattr(settings, "ELIBRARY_NAME", "TS eLibrary"),
+        "ELIBRARY_LOGO": getattr(settings, "ELIBRARY_LOGO", "images/9532_training_squadron_seal.png"),
     }

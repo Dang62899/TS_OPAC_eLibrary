@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Notifications - e-Library{% endblock %}
+{% block title %}Notifications - {{ ELIBRARY_NAME }}{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -79,10 +79,13 @@
                                     {% endif %}
                                     
                                     {% if not notification.is_read %}
-                                    <a href="{% url 'circulation:mark_notification_read' notification.id %}?next=/circulation/notifications/" 
-                                       class="btn btn-sm btn-success">
-                                        <i class="bi bi-check"></i> Mark as Read
-                                    </a>
+                                    <form method="post" action="{% url 'circulation:mark_notification_read' notification.id %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="/circulation/notifications/">
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="bi bi-check"></i> Mark as Read
+                                        </button>
+                                    </form>
                                     {% endif %}
                                     
                                     <form method="post" action="{% url 'circulation:delete_notification' notification.id %}" 

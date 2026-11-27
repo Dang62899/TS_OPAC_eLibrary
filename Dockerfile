@@ -24,6 +24,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     postgresql-client \
+    fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Python dependencies from builder
@@ -33,7 +34,9 @@ COPY --from=builder /root/.local /home/appuser/.local
 COPY . .
 
 # Create non-root user
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app /home/appuser
+RUN useradd -m -u 1000 appuser \
+    && mkdir -p /var/log/elibrary \
+    && chown -R appuser:appuser /app /home/appuser /var/log/elibrary
 
 # Set environment variables
 ENV PATH=/home/appuser/.local/bin:$PATH \

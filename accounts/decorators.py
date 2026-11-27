@@ -7,12 +7,12 @@ from django.contrib.auth.decorators import user_passes_test
 
 def is_admin(user):
     """Check if user is an admin"""
-    return user.is_authenticated and user.user_type == "admin"
+    return user.is_authenticated and user.is_library_admin
 
 
 def is_staff_or_admin(user):
     """Check if user is staff or admin"""
-    return user.is_authenticated and user.user_type in ["staff", "admin"]
+    return user.is_authenticated and user.is_library_staff
 
 
 def is_borrower(user):

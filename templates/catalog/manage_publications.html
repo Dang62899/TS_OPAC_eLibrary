@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Manage Publications - e-Library{% endblock %}
+{% block title %}Manage Publications - {{ ELIBRARY_NAME }}{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
@@ -74,7 +74,7 @@
                             <a href="{% url 'catalog:add_items' publication.id %}" class="btn btn-sm btn-outline-info">
                                 <i class="bi bi-plus-square"></i> Items
                             </a>
-                            {% if user.user_type == 'admin' %}
+                            {% if user.is_library_admin %}
                             <a href="{% url 'catalog:delete_publication' publication.id %}" class="btn btn-sm btn-outline-danger">
                                 <i class="bi bi-trash"></i> Delete
                             </a>

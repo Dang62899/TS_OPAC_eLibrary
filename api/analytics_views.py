@@ -4,7 +4,7 @@ Provides real-time metrics, performance data, and system health information.
 """
 
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from .permissions import IsAuthenticatedAndAgreed, IsAdminUserAndAgreed
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminUserAndAgreed])
 def metrics_summary_view(request):
     """
     GET /api/v1/analytics/metrics-summary/
@@ -44,7 +44,7 @@ def metrics_summary_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminUserAndAgreed])
 def performance_dashboard_view(request):
     """
     GET /api/v1/analytics/performance/
@@ -66,7 +66,7 @@ def performance_dashboard_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminUserAndAgreed])
 def sla_status_view(request):
     """
     GET /api/v1/analytics/sla-status/
@@ -90,7 +90,7 @@ def sla_status_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminUserAndAgreed])
 def request_trends_view(request):
     """
     GET /api/v1/analytics/trends/requests/
@@ -114,7 +114,7 @@ def request_trends_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminUserAndAgreed])
 def error_trends_view(request):
     """
     GET /api/v1/analytics/trends/errors/
@@ -138,7 +138,7 @@ def error_trends_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminUserAndAgreed])
 def alerts_view(request):
     """
     GET /api/v1/analytics/alerts/
@@ -161,7 +161,7 @@ def alerts_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticatedAndAgreed])
 def user_activity_view(request):
     """
     GET /api/v1/analytics/user-activity/
@@ -198,7 +198,7 @@ def user_activity_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminUserAndAgreed])
 def library_analytics_view(request):
     """
     GET /api/v1/analytics/library/
@@ -218,7 +218,7 @@ def library_analytics_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminUserAndAgreed])
 def circulation_analytics_view(request):
     """
     GET /api/v1/analytics/circulation/
@@ -238,7 +238,7 @@ def circulation_analytics_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminUserAndAgreed])
 def users_analytics_view(request):
     """
     GET /api/v1/analytics/users/
@@ -258,7 +258,7 @@ def users_analytics_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminUserAndAgreed])
 def system_health_view(request):
     """
     GET /api/v1/analytics/system-health/

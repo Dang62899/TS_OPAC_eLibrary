@@ -1,177 +1,215 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
 
-{% block title %}Search Catalog - e-Library{% endblock %}
+{% block title %}Search Catalog - {{ ELIBRARY_NAME }}{% endblock %}
 
 {% block content %}
-<h1>Search Catalog</h1>
-
-<div class="card mb-4">
-    <div class="card-body">
-        <form method="get">
-            {{ form|crispy }}
-            <button type="submit" class="btn btn-primary" id="searchBtn">
-                <i class="bi bi-search"></i> Search
-            </button>
-            <a href="{% url 'catalog:search' %}" class="btn btn-secondary">Clear</a>
-        </form>
+<section aria-labelledby="catalog-search-title" class="mx-auto" style="max-width: 1100px;">
+    <div class="mb-4 text-center">
+        <h1 id="catalog-search-title" class="display-6 fw-semibold">Search the catalog</h1>
+        <p class="text-muted mb-0">Search every book and resource by title, author, subject, ISBN, or keyword.</p>
     </div>
-</div>
 
-<div id="searchLoading" style="display: none;">
-    <h3 class="mt-4 mb-3">Searching...</h3>
-    <div id="skeletonContainer"></div>
-</div>
-
-{% if total_results is not None %}
-<div id="searchResults" class="fade-in">
-    <h3>Search Results ({{ total_results }} found)</h3>
-
-    {% if facets.publication_types or facets.languages or facets.authors or facets.subjects %}
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5>Refine Results</h5>
-            {% if facets.publication_types %}
-            <div class="mb-3">
-                <strong>Types</strong>
-                <div class="d-flex flex-wrap gap-2 mt-2">
-                    {% for facet in facets.publication_types %}
-                    <a class="btn btn-sm btn-outline-secondary" href="?{{ request.GET.urlencode }}&publication_type={{ facet.id }}">{{ facet.name }} ({{ facet.count }})</a>
-                    {% endfor %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-3 p-md-4">
+            <form method="get" data-suggestions-url="{% url 'catalog:search_suggestions' %}" role="search">
+                {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+                <label for="id_query" class="form-label fw-semibold">Search all books</label>
+                <div class="input-group input-group-lg">
+                    <input id="id_query" type="search" name="query" class="form-control" placeholder="Title, author, subject, ISBN, or keyword" value="{{ form.query.value|default:'' }}" autocomplete="off">
+                    <button type="submit" class="btn btn-primary" id="searchBtn">
+                        <i class="bi bi-search me-1" aria-hidden="true"></i> Search
+                    </button>
                 </div>
-            </div>
-            {% endif %}
-            {% if facets.languages %}
-            <div class="mb-3">
-                <strong>Languages</strong>
-                <div class="d-flex flex-wrap gap-2 mt-2">
-                    {% for facet in facets.languages %}
-                    <a class="btn btn-sm btn-outline-secondary" href="?{{ request.GET.urlencode }}&language={{ facet.language }}">{{ facet.language }} ({{ facet.count }})</a>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-            {% if facets.availability %}
-            <div class="mb-3">
-                <strong>Availability</strong>
-                <div class="d-flex flex-wrap gap-2 mt-2">
-                    {% for facet in facets.availability %}
-                    <a class="btn btn-sm btn-outline-secondary" href="?{{ request.GET.urlencode }}&available_only=on">{{ facet.status }} ({{ facet.count }})</a>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-    {% endif %}
-
-    <div class="row">
-        {% for publication in page_obj %}
-        <div class="col-md-12 mb-3">
-            <div class="card slide-in">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <h5 class="card-title">
-                                <a href="{% url 'catalog:publication_detail' publication.id %}">{{ publication.title }}</a>
-                            </h5>
-                            {% if publication.subtitle %}
-                            <p class="text-muted">{{ publication.subtitle }}</p>
-                            {% endif %}
-                            <p class="mb-1"><strong>Author(s):</strong> {{ publication.get_authors_display }}</p>
-                            <p class="mb-1"><strong>Type:</strong> {{ publication.publication_type }}</p>
-                            {% if publication.call_number %}
-                            <p class="mb-1"><strong>Call Number:</strong> {{ publication.call_number }}</p>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <p>
-                                <strong>Copies:</strong> {{ publication.get_available_copies_count }} / {{ publication.get_total_copies_count }} available
-                            </p>
-                            {% if publication.is_available %}
-                                <span class="badge bg-success">Available</span>
-                            {% else %}
-                                <span class="badge bg-warning">On Loan</span>
-                            {% endif %}
-                        </div>
+                <div class="row mt-2">
+                    <div class="col-sm-6 col-md-4">
+                        <label for="id_search_in" class="form-label">Search in</label>
+                        {{ form.search_in }}
                     </div>
                 </div>
-            </div>
+                {% if form.query.errors %}<div class="text-danger small mt-1">{{ form.query.errors }}</div>{% endif %}
+
+                <details class="mt-3" {% if request.GET.publication_types or request.GET.authors or request.GET.subjects or request.GET.language or request.GET.year_from or request.GET.year_to or request.GET.available_only or request.GET.location or request.GET.sort_by or request.GET.research_class or request.GET.unit or request.GET.resource_type or request.GET.tag or request.GET.format or request.GET.downloadable %}open{% endif %}>
+                    <summary class="fw-semibold text-primary">Filter results across the catalog</summary>
+                    <div class="border rounded p-3 mt-3">
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <fieldset>
+                                    <legend class="h6">Book and resource types</legend>
+                                    {% for choice in form.publication_types %}
+                                    <div class="form-check">{{ choice.tag }}<label class="form-check-label" for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label></div>
+                                    {% empty %}<p class="small text-muted">No types available.</p>{% endfor %}
+                                </fieldset>
+                            </div>
+                            <div class="col-md-4">
+                                <fieldset>
+                                    <legend class="h6">Authors</legend>
+                                    <div class="filter-checklist">
+                                        {% for choice in form.authors %}
+                                        <div class="form-check">{{ choice.tag }}<label class="form-check-label" for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label></div>
+                                        {% empty %}<p class="small text-muted">No authors available.</p>{% endfor %}
+                                    </div>
+                                </fieldset>
+                            </div>
+                            <div class="col-md-4">
+                                <fieldset>
+                                    <legend class="h6">Subjects</legend>
+                                    <div class="filter-checklist">
+                                        {% for choice in form.subjects %}
+                                        <div class="form-check">{{ choice.tag }}<label class="form-check-label" for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label></div>
+                                        {% empty %}<p class="small text-muted">No subjects available.</p>{% endfor %}
+                                    </div>
+                                </fieldset>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1 align-items-end">
+                            <div class="col-sm-6 col-lg-3">
+                                <label class="form-label" for="id_language">Language</label>
+                                <input class="form-control" id="id_language" type="text" name="language" value="{{ form.language.value|default:'' }}" placeholder="Any language">
+                            </div>
+                            <div class="col-sm-6 col-lg-2">
+                                <label class="form-label" for="id_year_from">Year from</label>
+                                <input class="form-control" id="id_year_from" type="number" name="year_from" value="{{ form.year_from.value|default:'' }}" min="1000" max="9999">
+                                {% if form.year_from.errors %}<div class="text-danger small">{{ form.year_from.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-sm-6 col-lg-2">
+                                <label class="form-label" for="id_year_to">Year to</label>
+                                <input class="form-control" id="id_year_to" type="number" name="year_to" value="{{ form.year_to.value|default:'' }}" min="1000" max="9999">
+                                {% if form.year_to.errors %}<div class="text-danger small">{{ form.year_to.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-sm-6 col-lg-3">
+                                <label class="form-label" for="id_location">Location</label>
+                                <select class="form-select" id="id_location" name="location">
+                                    <option value="">All locations</option>
+                                    {% for location in form.fields.location.queryset %}
+                                    <option value="{{ location.pk }}" {% if form.location.value|stringformat:"s" == location.pk|stringformat:"s" %}selected{% endif %}>{{ location }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-sm-6 col-lg-2">
+                                <label class="form-label" for="id_sort_by">Sort by</label>
+                                <select class="form-select" id="id_sort_by" name="sort_by">
+                                    {% for value, label in form.fields.sort_by.choices %}
+                                    <option value="{{ value }}" {% if form.sort_by.value == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" id="id_available_only" type="checkbox" name="available_only" value="on" {% if form.available_only.value %}checked{% endif %}>
+                            <label class="form-check-label" for="id_available_only">Available copies only</label>
+                        </div>
+                        <div class="row g-3 mt-1">
+                            <div class="col-sm-6 col-lg-3">
+                                <label class="form-label" for="id_research_class">Class</label>
+                                {{ form.research_class }}
+                            </div>
+                            <div class="col-sm-6 col-lg-3">
+                                <label class="form-label" for="id_unit">Unit</label>
+                                {{ form.unit }}
+                            </div>
+                            <div class="col-sm-6 col-lg-3">
+                                <label class="form-label" for="id_resource_type">Resource type</label>
+                                {{ form.resource_type }}
+                            </div>
+                            <div class="col-sm-6 col-lg-3">
+                                <label class="form-label" for="id_format">File format</label>
+                                {{ form.format }}
+                            </div>
+                            <div class="col-sm-6 col-lg-3">
+                                <label class="form-label" for="id_tag">Resource tag</label>
+                                {{ form.tag }}
+                            </div>
+                            <div class="col-sm-6 col-lg-3">
+                                <label class="form-label" for="id_downloadable">Download access</label>
+                                {{ form.downloadable }}
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+                    <span class="small text-muted">Filters combine with your search and apply to the entire catalog.</span>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-outline-primary">Apply filters</button>
+                        <a href="{% url 'catalog:search' %}" class="btn btn-outline-secondary">Clear all</a>
+                    </div>
+                </div>
+            </form>
         </div>
-        {% empty %}
-        <div class="col-12">
-            <p class="text-muted">No publications found matching your search criteria.</p>
-        </div>
-        {% endfor %}
     </div>
 
-    {% if page_obj.has_other_pages %}
-    <nav>
-        <ul class="pagination justify-content-center">
-            {% if page_obj.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?page=1&{{ request.GET.urlencode }}">First</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">Previous</a>
-            </li>
-            {% endif %}
+    <div id="searchLoading" class="mb-3" style="display:none;" aria-live="polite">
+        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Searching the catalog…
+    </div>
 
-            <li class="page-item active">
-                <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-            </li>
+    {% if total_results is not None %}
+    <section id="searchResults" aria-labelledby="search-results-title">
+        <div class="d-flex flex-wrap justify-content-between align-items-baseline mb-3">
+            <h2 id="search-results-title" class="h4 mb-0">Results</h2>
+            <span class="text-muted">{{ total_results }} found</span>
+        </div>
 
-            {% if page_obj.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">Next</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&{{ request.GET.urlencode }}">Last</a>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
+        <div class="row g-3">
+            {% for publication in page_obj %}
+            <div class="col-12">
+                <article class="card h-100">
+                    <div class="card-body">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md">
+                                <h3 class="h5 card-title mb-1"><a href="{% url 'catalog:publication_detail' publication.id %}">{{ publication.title }}</a></h3>
+                                {% if publication.subtitle %}<p class="text-muted mb-2">{{ publication.subtitle }}</p>{% endif %}
+                                <p class="mb-1"><strong>Author(s):</strong> {{ publication.get_authors_display|default:"Not listed" }}</p>
+                                <p class="mb-0"><strong>Type:</strong> {{ publication.publication_type }}</p>
+                                {% if publication.call_number %}<p class="small text-muted mb-0 mt-1">Call number: {{ publication.call_number }}</p>{% endif %}
+                            </div>
+                            <div class="col-md-auto text-md-end">
+                                <div class="small mb-2"><strong>{{ publication.get_available_copies_count }}</strong> of {{ publication.get_total_copies_count }} available</div>
+                                {% if publication.is_available %}<span class="badge bg-success">Available</span>{% else %}<span class="badge bg-secondary">Unavailable</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+            {% empty %}
+            <div class="col-12"><div class="alert alert-light border mb-0">No books or resources matched those search terms and filters. Try removing a filter.</div></div>
+            {% endfor %}
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <nav class="mt-4" aria-label="Catalog result pages">
+            <ul class="pagination justify-content-center flex-wrap">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page=1{% if pagination_query %}&amp;{{ pagination_query }}{% endif %}">First</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if pagination_query %}&amp;{{ pagination_query }}{% endif %}">Previous</a></li>
+                {% endif %}
+                <li class="page-item active" aria-current="page"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if pagination_query %}&amp;{{ pagination_query }}{% endif %}">Next</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if pagination_query %}&amp;{{ pagination_query }}{% endif %}">Last</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </section>
     {% endif %}
-</div>
-{% endif %}
+</section>
+
+<style>
+.filter-checklist { max-height: 13rem; overflow-y: auto; padding-right: .5rem; }
+.filter-checklist .form-check { margin-bottom: .35rem; }
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const searchForm = document.querySelector('form');
+    const searchForm = document.querySelector('form[role="search"]');
     const searchBtn = document.getElementById('searchBtn');
     const searchLoading = document.getElementById('searchLoading');
-    const skeletonContainer = document.getElementById('skeletonContainer');
-    const searchResults = document.getElementById('searchResults');
-
-    if (searchForm && loadingManager) {
-        searchForm.addEventListener('submit', function(e) {
-            // Show loading skeletons
-            searchLoading.style.display = 'block';
-            skeletonContainer.innerHTML = '';
-            
-            // Add 5 skeleton cards
-            for (let i = 0; i < 5; i++) {
-                skeletonContainer.appendChild(loadingManager.createSkeletonCard(3));
-            }
-            
-            if (searchResults) {
-                searchResults.style.display = 'none';
-            }
-            
-            showButtonLoading(searchBtn);
-        });
-
-        // Hide loading when results are back
-        window.addEventListener('load', function() {
-            searchLoading.style.display = 'none';
-            if (searchResults) {
-                searchResults.style.display = 'block';
-            }
-            hideButtonLoading(searchBtn);
-        });
-    }
+    if (!searchForm) return;
+    searchForm.addEventListener('submit', function() {
+        if (searchLoading) searchLoading.style.display = 'block';
+        if (searchBtn && typeof showButtonLoading === 'function') showButtonLoading(searchBtn);
+    });
 });
 </script>
-
 {% endblock %}
-

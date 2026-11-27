@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.test import Client
-from django.core.cache import cache
 
+from accounts.forms import build_login_challenge
 from accounts.models import User
 from accounts.security import TwoFactorAuthManager
 import pyotp
@@ -14,6 +14,7 @@ class TwoFactorAuthTests(TestCase):
             email="staff@example.com",
             password="SecurePass123!",
             user_type="staff",
+            agreed_to_terms=True,
         )
 
     def test_generate_totp_secret_persists_secret_for_user(self):
@@ -49,30 +50,35 @@ class TwoFactorAuthTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertRedirects(response, "/circulation/staff-dashboard/")
+        self.assertRedirects(response, "/")
 
-    def test_passkey_mode_prompts_for_totp_code(self):
-        self.user.otp_secret = pyotp.random_base32()
-        self.user.save(update_fields=["otp_secret"])
-
+    def test_passkey_submission_cannot_authenticate(self):
         client = Client()
-        response = client.get("/accounts/login/")
-        captcha_value = client.session["login_captcha_value"]
-
+        client.get("/accounts/login/")
         response = client.post(
             "/accounts/login/",
             {
                 "username": self.user.username,
-                "password": "SecurePass123!",
-                "captcha": captcha_value,
+                "captcha": client.session["login_captcha_value"],
                 "auth_method": "passkey",
+                "totp_code": pyotp.TOTP(self.user.otp_secret or pyotp.random_base32()).now(),
             },
-            follow=True,
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Please enter your Google Authenticator code")
-        self.assertContains(response, "name=\"auth_method\" value=\"passkey\"")
+        self.assertNotIn("_auth_user_id", client.session)
+        self.assertNotContains(response, "passkey")
+
+    def test_regular_login_still_requires_password(self):
+        client = Client()
+        client.get("/accounts/login/")
+        response = client.post(
+            "/accounts/login/",
+            {"username": self.user.username, "captcha": client.session["login_captcha_value"]},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", client.session)
 
     def test_disabling_two_factor_requires_valid_code(self):
         self.user.two_factor_enabled = True
@@ -105,6 +111,7 @@ class TwoFactorAuthTests(TestCase):
             email="borrower@example.com",
             password="SecurePass123!",
             user_type="borrower",
+            agreed_to_terms=True,
         )
         borrower.two_factor_enabled = True
         borrower.otp_secret = pyotp.random_base32()
@@ -122,24 +129,25 @@ class TwoFactorAuthTests(TestCase):
         response = client.get("/accounts/login/")
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Captcha challenge")
-        self.assertContains(response, "Select the icon")
+        self.assertContains(response, "Security check")
+        self.assertContains(response, "Type the characters you see in the image.")
 
     def test_login_page_displays_generated_captcha_challenge(self):
         client = Client()
         response = client.get("/accounts/login/")
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Captcha challenge")
-        self.assertContains(response, "Enter the code shown in the image")
+        self.assertContains(response, "Security check")
+        self.assertContains(response, "Type the characters you see in the image.")
         self.assertContains(response, 'name="captcha"')
 
-    def test_login_page_displays_visual_captcha_option_grid(self):
+    def test_login_page_uses_image_captcha_instead_of_option_grid(self):
         client = Client()
         response = client.get("/accounts/login/")
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "captcha-option-btn")
+        self.assertContains(response, "captcha-image")
+        self.assertNotContains(response, "captcha-option-btn")
 
     def test_login_page_renders_distorted_captcha_image(self):
         client = Client()
@@ -147,3 +155,28 @@ class TwoFactorAuthTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "captcha-image")
+
+    def test_login_challenge_is_randomly_generated(self):
+        values = {build_login_challenge()["correct_value"] for _ in range(20)}
+
+        self.assertGreater(len(values), 15)
+        for value in values:
+            self.assertIn(len(value), (5, 6))
+            self.assertTrue(value.isalnum() and value.isupper() or value.isdigit())
+
+    def test_login_page_uses_modern_auth_layout(self):
+        client = Client()
+        response = client.get("/accounts/login/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'auth-shell')
+        self.assertContains(response, 'auth-illustration')
+        self.assertContains(response, 'auth-panel')
+        self.assertNotContains(response, "passkey")
+        self.assertNotContains(response, 'class="site-header"')
+        self.assertContains(response, "images/9532_training_squadron_seal.png")
+        self.assertContains(response, 'class="project-seal"')
+        self.assertNotContains(response, "brand-badge")
+        self.assertNotContains(response, "login-submit-seal")
+        self.assertContains(response, "class=\"login-panel-footer\"")
+        self.assertContains(response, "9533rd Research and Development Squadron | Jacksone Agtarap")

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>User Agreement</h2>
+  <p>{{ agreement_text }}</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-check mb-3">
+      {{ form.accept_agreement }}
+      <label class="form-check-label" for="{{ form.accept_agreement.id_for_label }}">
+        {{ form.accept_agreement.label }}
+      </label>
+      {{ form.accept_agreement.errors }}
+    </div>
+    <button class="btn btn-primary" type="submit">I Accept</button>
+  </form>
+{% endblock %}

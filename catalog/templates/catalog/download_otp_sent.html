@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h3>OTP Sent</h3>
+  <p>If you provided an email, a one-time download code has been sent to your registered address.</p>
+  <p>Check your email and use the code on the download confirmation page.</p>
+  <p><a href="{{ request.META.HTTP_REFERER }}">Back</a></p>
+{% endblock %}

@@ -1,119 +1,381 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
+{% load static %}
 
-{% block title %}Login - e-Library{% endblock %}
+{% block title %}Login - {{ ELIBRARY_NAME }}{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h3 class="mb-0">Login</h3>
+<div class="login-page-shell">
+    <div class="auth-shell">
+        <aside class="auth-illustration">
+            <div class="brand-strip">
+                <span class="brand-name">{{ ELIBRARY_NAME }}</span>
             </div>
-            <div class="card-body">
+
+            <div class="project-seal-wrap">
+                <img src="{% static ELIBRARY_LOGO %}" alt="9532nd Training Squadron insignia" class="project-seal">
+            </div>
+
+            <footer class="login-panel-footer">
+                &copy; 2026 9533rd Research and Development Squadron | Jacksone Agtarap
+            </footer>
+        </aside>
+
+        <section class="auth-panel">
+            <div class="auth-panel-inner">
                 {% if messages %}
                     {% for message in messages %}
-                        <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+                        <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show auth-message" role="alert">
                             {{ message }}
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     {% endfor %}
                 {% endif %}
 
-                <div class="auth-card p-4 p-md-5 mx-auto">
-                    <div class="text-center mb-4">
-                        <h2 class="auth-title">Account Authentication</h2>
-                        <p class="text-muted mb-0">Secure login with CAPTCHA verification.</p>
-                    </div>
-
-                    <form method="post" novalidate>
-                        {% csrf_token %}
-                        {{ form.non_field_errors }}
-                        <input type="hidden" name="auth_method" id="auth_method" value="{{ auth_method|default:'' }}">
-                        <div class="mb-3">{{ form.username }}</div>
-                        <div class="mb-3">{{ form.password }}</div>
-
-                        <div class="captcha-panel text-center mb-3">
-                            <div class="d-flex justify-content-center mb-2">
-                                <span class="badge bg-secondary text-white px-3 py-2">Captcha challenge</span>
-                            </div>
-                            <div class="captcha-prompt mb-2 text-start">
-                                <p class="mb-1">{{ captcha_prompt|default:"Enter the distorted text shown in the image." }}</p>
-                                <p class="text-muted small mb-0">Type the characters from the CAPTCHA image below.</p>
-                            </div>
-                            {% if captcha_image %}
-                                <div class="captcha-image-wrap mx-auto mb-3">
-                                    <img src="{{ captcha_image }}" alt="Captcha challenge" class="captcha-image" />
-                                </div>
-                            {% else %}
-                                <div class="captcha-box mx-auto mb-3">{{ captcha_value|default:"----" }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">{{ form.captcha }}</div>
-
-                        <div id="totpSection" class="mb-3" style="display: {% if requires_2fa or passkey_mode %}block{% else %}none{% endif %};">
-                            <div class="alert alert-info">Enter the 6-digit code from your Google Authenticator app.</div>
-                            <div class="mb-3">{{ form.totp_code }}</div>
-                        </div>
-
-                        <div class="d-grid gap-2 mb-3">
-                            <button type="submit" class="btn btn-primary btn-lg">Log in</button>
-                        </div>
-                    </form>
-
-                    <div class="login-divider my-4">
-                        <span>or login with</span>
-                    </div>
-
-                    <button type="button" class="btn btn-dark btn-lg w-100 passkey-btn mb-3" id="passkeyButton">
-                        <i class="bi bi-shield-lock-fill me-2"></i> Use Google Authenticator
-                    </button>
-                    <div class="text-center mb-3">
-                        <small class="text-muted">Click to switch to authenticator code login.</small>
-                    </div>
-                    <button type="button" class="btn btn-outline-light btn-lg w-100 normal-login-btn" id="normalLoginButton" style="display: none;">
-                        <i class="bi bi-person-lines-fill me-2"></i> Use regular password login
-                    </button>
+                <div class="auth-header">
+                    <h2>Account Authentication</h2>
                 </div>
 
-                <p class="text-center text-muted small mt-4 mb-0">Don't have an account? <a href="{% url 'accounts:register' %}">Register here</a></p>
+                <form method="post" novalidate class="auth-form">
+                    {% csrf_token %}
+                    {{ form.non_field_errors }}
+                    <div class="form-field-group">
+                        <label for="{{ form.username.id_for_label|default:'id_username' }}" class="sr-only">Username</label>
+                        {{ form.username }}
+                    </div>
+
+                    <div class="form-field-group">
+                        <label for="{{ form.password.id_for_label|default:'id_password' }}" class="sr-only">Password</label>
+                        {{ form.password }}
+                    </div>
+
+                    <div class="captcha-panel">
+                        <div class="sr-only">
+                            <span>Security check</span>
+                            <span>{{ captcha_prompt|default:"Complete the security check." }}</span>
+                            <span>Type the characters you see in the image.</span>
+                        </div>
+                        {% if captcha_image %}
+                            <div class="captcha-image-wrap">
+                                <img src="{{ captcha_image }}" alt="Captcha challenge" class="captcha-image" />
+                            </div>
+                        {% else %}
+                            <div class="captcha-box">{{ captcha_value|default:"----" }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-field-group captcha-field">
+                        <label for="{{ form.captcha.id_for_label|default:'id_captcha' }}" class="sr-only">Captcha</label>
+                        {{ form.captcha }}
+                    </div>
+
+                    <div id="totpSection" class="mb-3" style="display: {% if requires_2fa %}block{% else %}none{% endif %};">
+                        <div class="alert alert-info auth-alert">Enter the 6-digit code from your Google Authenticator app.</div>
+                        <div class="form-field-group">
+                            <label for="{{ form.totp_code.id_for_label|default:'id_totp_code' }}" class="sr-only">Authenticator code</label>
+                            {{ form.totp_code }}
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-lg w-100 auth-submit-btn">
+                        Log in
+                    </button>
+                </form>
             </div>
-        </div>
+        </section>
     </div>
 </div>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const passkeyButton = document.getElementById('passkeyButton');
-        const normalLoginButton = document.getElementById('normalLoginButton');
-        const authMethodInput = document.getElementById('auth_method');
-        const totpSection = document.getElementById('totpSection');
+{% block extra_css %}
+<style>
+    body {
+        background: #d9d9d9;
+        font-family: "Inter", sans-serif;
+    }
 
-        if (passkeyButton && normalLoginButton && authMethodInput && totpSection) {
-            const isPasskeyMode = authMethodInput.value === 'passkey';
-            if (isPasskeyMode) {
-                totpSection.style.display = 'block';
-                passkeyButton.style.display = 'none';
-                normalLoginButton.style.display = 'block';
-            }
+    .page-main {
+        flex: 1;
+        padding: 0 !important;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-            passkeyButton.addEventListener('click', function () {
-                authMethodInput.value = 'passkey';
-                totpSection.style.display = 'block';
-                passkeyButton.style.display = 'none';
-                normalLoginButton.style.display = 'block';
-            });
+    .page-content {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
 
-            normalLoginButton.addEventListener('click', function () {
-                authMethodInput.value = '';
-                totpSection.style.display = 'none';
-                passkeyButton.style.display = 'block';
-                normalLoginButton.style.display = 'none';
-            });
+    .login-page-shell {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 16px;
+        box-sizing: border-box;
+    }
+
+    .auth-shell {
+        width: 760px;
+        max-width: calc(100vw - 40px);
+        min-height: 560px;
+        display: grid;
+        grid-template-columns: 0.9fr 1.1fr;
+        background: #fff;
+        overflow: hidden;
+        position: relative;
+        border-radius: 10px;
+        box-shadow:
+            0 0 0 1px rgba(0, 0, 0, 0.04),
+            3px 4px 0 0 #e7e5df,
+            6px 7px 0 0 #d2d0cb,
+            0 16px 36px rgba(0, 0, 0, 0.18);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        margin: 0 auto;
+    }
+
+    .auth-shell::after {
+        content: "";
+        position: absolute;
+        z-index: 3;
+        top: 0;
+        bottom: 0;
+        left: 45%;
+        width: 10px;
+        background: linear-gradient(
+            90deg,
+            rgba(0, 0, 0, 0.14),
+            rgba(255, 255, 255, 0.22) 38%,
+            rgba(0, 0, 0, 0.05) 72%,
+            transparent
+        );
+        pointer-events: none;
+    }
+
+    .auth-illustration {
+        background: linear-gradient(180deg, #1b9ae8 0%, #1a90dd 100%);
+        color: #fff;
+        padding: 24px 18px 18px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        position: relative;
+        text-align: center;
+        box-shadow: inset -10px 0 16px -16px rgba(0, 0, 0, 0.7);
+    }
+
+    .brand-strip {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        font-size: 0.82rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: #fff;
+        margin-top: 4px;
+        margin-bottom: 8px;
+    }
+
+    .brand-name {
+        display: inline-block;
+        font-size: 1.1rem;
+        letter-spacing: 0.06em;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    .project-seal-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        margin: 0;
+        flex: 1;
+    }
+
+    .project-seal {
+        display: block;
+        width: min(270px, 75%);
+        height: auto;
+        aspect-ratio: 1;
+        object-fit: contain;
+        border-radius: 50%;
+    }
+
+    .login-panel-footer {
+        width: 100%;
+        margin-top: 12px;
+        color: rgba(255, 255, 255, 0.92);
+        font-size: 0.72rem;
+        line-height: 1.35;
+        text-align: center;
+    }
+
+    .auth-panel {
+        background: linear-gradient(90deg, #f0f0f0 0%, #fbfbfb 6%, #f7f7f7 100%);
+        padding: 24px 28px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: inset 10px 0 18px -18px rgba(0, 0, 0, 0.8);
+    }
+
+    .auth-panel-inner {
+        width: 100%;
+        max-width: 370px;
+    }
+
+    .auth-header {
+        margin-bottom: 18px;
+    }
+
+    .auth-header h2 {
+        margin: 0;
+        font-size: clamp(1.9rem, 0.9vw + 1.2rem, 2.5rem);
+        line-height: 1.2;
+        letter-spacing: -0.04em;
+        color: #1e1e1e;
+        font-weight: 700;
+    }
+
+    .auth-form {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .form-field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+    }
+
+    .form-control {
+        width: 100%;
+        min-height: 48px;
+        border-radius: 10px !important;
+        border: 1px solid #d7d7d7 !important;
+        background: #fff;
+        color: #1b1b1b;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.01);
+        padding: 0.8rem 1rem;
+        font-size: 1.1rem;
+    }
+
+    .form-control::placeholder {
+        color: #6d6d6d;
+        opacity: 1;
+    }
+
+    .captcha-panel {
+        background: #efefef;
+        border-radius: 8px;
+        border: 1px solid #d8d8d8;
+        padding: 8px;
+        margin-top: 2px;
+    }
+
+    .captcha-image-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #efefef;
+        border-radius: 6px;
+        min-height: 74px;
+        overflow: hidden;
+    }
+
+    .captcha-image {
+        display: block;
+        width: 100%;
+        max-width: 230px;
+        height: auto;
+        filter: grayscale(1) contrast(1.05) brightness(0.96);
+    }
+
+    .captcha-box {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 70px;
+        font-size: 2rem;
+        letter-spacing: 0.2rem;
+        color: #2c2c2c;
+        font-weight: 700;
+        transform: rotate(-8deg);
+    }
+
+    .form-control:focus {
+        border-color: rgba(26, 122, 231, 0.8) !important;
+        box-shadow: 0 0 0 0.2rem rgba(26, 122, 231, 0.12) !important;
+    }
+
+    .btn {
+        border-radius: 8px;
+        font-weight: 600;
+        min-height: 46px;
+    }
+
+    .auth-submit-btn {
+        background: linear-gradient(180deg, #1e95e4 0%, #1d88d5 100%);
+        border: none;
+        color: #fff;
+        box-shadow: none;
+        font-size: 1.1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .auth-submit-btn:hover {
+        background: linear-gradient(180deg, #1786d9 0%, #1273c7 100%);
+        color: #fff;
+    }
+
+    .auth-message {
+        border-radius: 10px;
+    }
+
+    @media (max-width: 760px) {
+        .auth-shell {
+            grid-template-columns: 1fr;
+            min-height: auto;
         }
-    });
-</script>
+
+        .auth-illustration {
+            padding: 22px 16px 18px;
+            box-shadow: inset 0 -10px 14px -16px rgba(0, 0, 0, 0.75);
+        }
+
+        .auth-panel {
+            padding: 22px 18px 18px;
+            box-shadow: inset 0 10px 14px -16px rgba(0, 0, 0, 0.75);
+        }
+
+        .auth-shell::after {
+            display: none;
+        }
+    }
+</style>
 {% endblock %}

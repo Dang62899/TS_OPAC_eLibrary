@@ -83,6 +83,14 @@ A comprehensive Django-based library management system for managing Manuals, SOP
    pip install -r requirements.txt
    ```
 
+4. **Generate presentation (optional)**
+
+   The configured logo is `static/images/TS_Logo.jpg`. Generate the Group Commander briefing with:
+
+   ```
+   python scripts/generate_presentation_enhanced.py TS_OPAC_eLibrary_Group_Commander_Briefing.pptx
+   ```
+
 4. **Run database migrations**
    ```
    python manage.py makemigrations

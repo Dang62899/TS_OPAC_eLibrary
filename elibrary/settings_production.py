@@ -19,6 +19,8 @@ import os
 # ============================================================================
 
 DEBUG = False  # MUST be False in production
+ELIBRARY_PRODUCTION = True
+PASSWORD_MIN_LENGTH = int(os.environ.get("PASSWORD_MIN_LENGTH", "12"))
 
 ALLOWED_HOSTS = os.environ.get(
     'ALLOWED_HOSTS',
@@ -35,6 +37,7 @@ if not SECRET_KEY or len(SECRET_KEY) < 50:
 
 # Force HTTPS
 SECURE_SSL_REDIRECT = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
@@ -115,7 +118,7 @@ DATABASES = {
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'BACKEND': 'django_redis.cache.RedisCache',
         'LOCATION': os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/1'),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
@@ -266,10 +269,13 @@ if SENTRY_DSN:
 
 # Session settings
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-SESSION_COOKIE_AGE = 1800  # 30 minutes
+SESSION_COOKIE_AGE = int(
+    os.environ.get("SESSION_TIMEOUT", os.environ.get("SESSION_COOKIE_AGE", "1800"))
+)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Cache templates
+TEMPLATES[0]['APP_DIRS'] = False
 TEMPLATES[0]['OPTIONS']['loaders'] = [
     ('django.template.loaders.cached.Loader', [
         'django.template.loaders.filesystem.Loader',
@@ -282,6 +288,7 @@ TEMPLATES[0]['OPTIONS']['loaders'] = [
 # ============================================================================
 
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'DEFAULT_FILTER_BACKENDS': [
@@ -313,9 +320,10 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'accounts.middleware.RequireAgreementMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.security.SecurityMiddleware',
     'accounts.security.SecurityHeadersMiddleware',  # Custom security headers
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 # ============================================================================

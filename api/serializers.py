@@ -7,7 +7,6 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from catalog.models import Publication, PublicationType, Subject, Author, Item
 from circulation.models import Loan, Hold, Notification
-from accounts.models import User
 
 User = get_user_model()
 
@@ -35,7 +34,15 @@ class UserSerializer(serializers.ModelSerializer):
             "phone",
             "address",
         ]
-        read_only_fields = ["id", "date_joined", "username"]
+        read_only_fields = [
+            "id",
+            "date_joined",
+            "username",
+            "user_type",
+            "is_active",
+            "max_items_allowed",
+            "is_blocked",
+        ]
 
 
 class UserDetailSerializer(UserSerializer):
@@ -45,6 +52,10 @@ class UserDetailSerializer(UserSerializer):
         fields = UserSerializer.Meta.fields + [
             "library_card_number",
             "date_of_birth",
+            "block_reason",
+        ]
+        read_only_fields = UserSerializer.Meta.read_only_fields + [
+            "library_card_number",
             "block_reason",
         ]
 
@@ -94,6 +105,8 @@ class PublicationTypeSerializer(serializers.ModelSerializer):
 
 class AuthorSerializer(serializers.ModelSerializer):
     """Author serializer"""
+
+    biography = serializers.CharField(source="bio", allow_blank=True, required=False)
     
     class Meta:
         model = Author
@@ -105,11 +118,15 @@ class SubjectSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Subject
-        fields = ["id", "name", "description"]
+        fields = ["id", "name"]
 
 
 class ItemSerializer(serializers.ModelSerializer):
     """Item/Copy serializer"""
+
+    item_id = serializers.CharField(source="barcode", read_only=True)
+    isbn = serializers.CharField(source="publication.isbn", read_only=True)
+    date_added = serializers.DateField(source="acquisition_date", read_only=True)
     
     class Meta:
         model = Item
@@ -188,9 +205,8 @@ class PublicationDetailSerializer(serializers.ModelSerializer):
             "items",
             "available_items_count",
             "date_added",
-            "date_modified",
         ]
-        read_only_fields = ["id", "date_added", "date_modified"]
+        read_only_fields = ["id", "date_added"]
 
     def get_available_items_count(self, obj):
         return obj.items.filter(status="available").count()
@@ -262,7 +278,6 @@ class LoanSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "checkout_date", "return_date"]
 
     def get_is_overdue(self, obj):
-        from django.utils import timezone
         return obj.is_overdue()
 
     def get_days_until_due(self, obj):
@@ -291,13 +306,24 @@ class HoldSerializer(serializers.ModelSerializer):
             "publication_title",
             "borrower",
             "borrower_name",
+            "reserved_item",
+            "pickup_location",
             "hold_date",
             "queue_position",
             "status",
             "ready_date",
             "expiry_date",
         ]
-        read_only_fields = ["id", "hold_date", "queue_position"]
+        read_only_fields = [
+            "id",
+            "borrower",
+            "reserved_item",
+            "hold_date",
+            "queue_position",
+            "status",
+            "ready_date",
+            "expiry_date",
+        ]
 
     def get_queue_position(self, obj):
         return obj.get_queue_position()
@@ -305,6 +331,11 @@ class HoldSerializer(serializers.ModelSerializer):
 
 class NotificationSerializer(serializers.ModelSerializer):
     """Notification serializer"""
+
+    user = serializers.PrimaryKeyRelatedField(source="borrower", read_only=True)
+    related_loan = serializers.PrimaryKeyRelatedField(source="loan", read_only=True)
+    related_hold = serializers.PrimaryKeyRelatedField(source="hold", read_only=True)
+    created_at = serializers.DateTimeField(source="created_date", read_only=True)
     
     class Meta:
         model = Notification

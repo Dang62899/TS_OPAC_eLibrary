@@ -1,0 +1,9 @@
+{
+  "appId": "mil.af.ts9532.elibrary",
+  "appName": "TS eLibrary",
+  "webDir": "www",
+  "server": {
+    "url": "https://YOUR-DEPLOYED-HOST.example.com/accounts/login/",
+    "cleartext": false
+  }
+}
