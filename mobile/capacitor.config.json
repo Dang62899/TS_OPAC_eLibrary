@@ -3,7 +3,7 @@
   "appName": "TS eLibrary",
   "webDir": "www",
   "server": {
-    "url": "https://YOUR-DEPLOYED-HOST.example.com/accounts/login/",
+    "url": "https://ts-elibrary.onrender.com/accounts/login/",
     "cleartext": false
   }
 }
